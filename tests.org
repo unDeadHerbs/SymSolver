@@ -135,3 +135,75 @@ a
 1-2*3
 
 #+END_SRC
+** 00000016 Sum Variables
+#+BEGIN_SRC scheme :tangle tests.d/00000016-parse-sum_vars.input
+x+y
+
+#+END_SRC
+#+BEGIN_SRC scheme :tangle tests.d/00000016-parse-sum_vars.output
+x+y
+
+#+END_SRC
+** 00000017 Difference Variables
+#+BEGIN_SRC scheme :tangle tests.d/00000017-parse-difference_vars.input
+x-y
+
+#+END_SRC
+#+BEGIN_SRC scheme :tangle tests.d/00000017-parse-difference_vars.output
+x-y
+
+#+END_SRC
+** 00000018 Product Variables
+#+BEGIN_SRC scheme :tangle tests.d/00000018-parse-prod_vars.input
+x*y
+
+#+END_SRC
+#+BEGIN_SRC scheme :tangle tests.d/00000018-parse-prod_vars.output
+x*y
+
+#+END_SRC
+** 00000019 Product Variables Without
+#+BEGIN_SRC scheme :tangle tests.d/00000019-parse-prod_vars_without.input
+xy
+
+#+END_SRC
+#+BEGIN_SRC scheme :tangle tests.d/00000019-parse-prod_vars_without.output
+x*y
+
+#+END_SRC
+** 00000020 Product Variable with Number
+#+BEGIN_SRC scheme :tangle tests.d/00000020-parse-prod_var_num.input
+3x
+
+#+END_SRC
+#+BEGIN_SRC scheme :tangle tests.d/00000020-parse-prod_var_num.output
+3*x
+
+#+END_SRC
+** 00000021 Fraction Variables
+#+BEGIN_SRC scheme :tangle tests.d/00000021-parse-frac_vars.input
+x/y
+
+#+END_SRC
+#+BEGIN_SRC scheme :tangle tests.d/00000021-parse-frac_vars.output
+x/y
+
+#+END_SRC
+** 00000022 Fraction Variable Bottom
+#+BEGIN_SRC scheme :tangle tests.d/00000022-parse-frac_var_bot.input
+1/x
+
+#+END_SRC
+#+BEGIN_SRC scheme :tangle tests.d/00000022-parse-frac_var_bot.output
+1/x
+
+#+END_SRC
+** 00000023 Fraction Variable Top
+#+BEGIN_SRC scheme :tangle tests.d/00000023-parse-frac_var_top.input
+x/2
+
+#+END_SRC
+#+BEGIN_SRC scheme :tangle tests.d/00000023-parse-frac_var_top.output
+x/2
+
+#+END_SRC
