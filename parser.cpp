@@ -92,7 +92,7 @@ auto parse_product(string const& formula,size_t head)
 				if(auto term2=parse_term(formula,head)){
 					auto [t2,h2]=*term2;
 					head=h2;
-					ret={Equation::EQ_node({op,{ret},{t2}})};
+					ret={Equation::Op_node({op,{ret},{t2}})};
 				}else{
 					std::cerr <<"Error: Back track in parse_product."<<std::endl;
 					return {{ret,head-1}};
@@ -101,7 +101,7 @@ auto parse_product(string const& formula,size_t head)
 				if(auto term2=parse_term(formula,head)){
 					auto [t2,h2]=*term2;
 					head=h2;
-					ret={Equation::EQ_node({'*',{ret},{t2}})};
+					ret={Equation::Op_node({'*',{ret},{t2}})};
 				}else
 					return {{ret,head}};
 		}
@@ -123,7 +123,7 @@ auto parse_sum(string const& formula,size_t head)
 				if(auto term2=parse_product(formula,head)){
 					auto [t2,h2]=*term2;
 					head=h2;
-					ret={Equation::EQ_node({op,{ret},{t2}})};
+					ret={Equation::Op_node({op,{ret},{t2}})};
 				}else{
 					std::cerr <<"Error: Back track in parse_sum."<<std::endl;
 					return {{ret,head-1}};

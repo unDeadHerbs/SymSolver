@@ -32,25 +32,25 @@ char constexpr Equation::to_sym(Operator const op){
 //
 // Fixing the semantics of "unique_ptr" until I switch to a COW.
 //
-Equation::EQ_node::EQ_node(Operator const _op,Equation const& _l,Equation const& _r)
+Equation::Op_node::Op_node(Operator const _op,Equation const& _l,Equation const& _r)
 	:op(_op){
 	left=std::make_unique<Equation>(_l); // Not sure why this isn't just the constructor
 	right=std::make_unique<Equation>(_r);
 }
 
-Equation::EQ_node::EQ_node(char const _op,Equation const& _l,Equation const& _r)
+Equation::Op_node::Op_node(char const _op,Equation const& _l,Equation const& _r)
 	:op(Equation::to_Operator(_op)){
 	left=std::make_unique<Equation>(_l); // Not sure why this isn't just the constructor
 	right=std::make_unique<Equation>(_r);
 }
 
-Equation::EQ_node::EQ_node(EQ_node const& eq)
+Equation::Op_node::Op_node(Op_node const& eq)
 	:op(eq.op){
 	left=std::make_unique<Equation>(*eq.left); // Not sure why this isn't just the constructor
 	right=std::make_unique<Equation>(*eq.right);
 }
 
-Equation::EQ_node& Equation::EQ_node::operator=(Equation::EQ_node const& rhs){
+Equation::Op_node& Equation::Op_node::operator=(Equation::Op_node const& rhs){
 	op=rhs.op;
 	left=std::make_unique<Equation>(*rhs.left);
 	right=std::make_unique<Equation>(*rhs.right);
@@ -80,11 +80,11 @@ void print(Equation e) {
 	std::visit(overloaded{
 			[](double val){std::cout << val;},
 			[](Equation::Variable var){std::cout << var.name;},
-			[](Equation::EQ_node const& eq){
+			[](Equation::Op_node const& eq){
 				auto prec = precedent(eq.op);
 
 				bool add_parentheses = false;
-				if (auto* eqq=std::get_if<Equation::EQ_node>(&eq.left->value))
+				if (auto* eqq=std::get_if<Equation::Op_node>(&eq.left->value))
 					add_parentheses = precedent(eqq->op)<prec;
         if (add_parentheses)
 					std::cout << '(';
@@ -95,7 +95,7 @@ void print(Equation e) {
 				std::cout << Equation::to_sym(eq.op);
 				
         add_parentheses = false;
-				if (auto* eqq=std::get_if<Equation::EQ_node>(&eq.right->value))
+				if (auto* eqq=std::get_if<Equation::Op_node>(&eq.right->value))
 					add_parentheses = precedent(eqq->op)<prec || (precedent(eqq->op)==prec && right_binding(eq.op));
         if (add_parentheses)
 					std::cout << '(';
