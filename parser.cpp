@@ -75,16 +75,17 @@ auto parse_term(string const& formula,size_t head)
 
 auto parse_product(string const& formula,size_t head)
 	->std::optional<std::pair<Equation,int>>{
-	// term+('*'?+product)?
+	// term+(('*'?|'/')+product)?
 	if(auto term=parse_term(formula,head)){
 		auto [t,h]=*term;
 		head=h;
 		if(head>=formula.size()) return term;
-		if(formula[head]=='*'){
+		if(formula[head]=='*' || formula[head]=='/'){
+			auto op= formula[head];
 			head++;
 			if(auto term2=parse_product(formula,head)){
 				auto [t2,h2]=*term2;
-				return {{{Equation::EQ_node({'*',{t},{t2}})},h2}};
+				return {{{Equation::EQ_node({op,{t},{t2}})},h2}};
 			}else
 				return {};
 		}else
@@ -99,16 +100,17 @@ auto parse_product(string const& formula,size_t head)
 
 auto parse_sum(string const& formula,size_t head)
 	->std::optional<std::pair<Equation,int>>{
-	// product+('+'?+sum)?
+	// product+([+-]+sum)?
 	if(auto term=parse_product(formula,head)){
 		auto [t,h]=*term;
 		head=h;
 		if(head>=formula.size()) return term;
-		if(formula[head]=='+'){
+		if(formula[head]=='+' || formula[head]=='-'){
+			auto op=formula[head];
 			head++;
 			if(auto term2=parse_sum(formula,head)){
 				auto [t2,h2]=*term2;
-				return {{{Equation::EQ_node({'+',{t},{t2}})},h2}};
+				return {{{Equation::EQ_node({op,{t},{t2}})},h2}};
 			}else
 				return {};
 		}else

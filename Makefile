@@ -39,6 +39,8 @@ parse: parse.o parser.o equation.o
 	$(CXX) $(CXXFLAGS) -o $@ $^
 
 all: parse
+clean_targets:
+	-rm parse
 
 ##
 # Code to check for `#include' statements.
@@ -143,7 +145,7 @@ $(TEST_RES)/docs: $(wildcard *.h) $(wildcard *.cpp) Doxyfile Makefile
 ##
 # Remove the files made by this Makefile
 ##
-clean:
+clean: clean_targets
 	-rm *.o
 	-rm Doxyfile doxygen* docs docs.tmp
 	-rm -rf html latex

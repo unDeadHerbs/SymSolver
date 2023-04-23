@@ -27,3 +27,30 @@ a
 1+2
 
 #+END_SRC
+** 00000004 Difference
+#+BEGIN_SRC scheme :tangle tests.d/00000004-parse-difference.input
+2-1
+
+#+END_SRC
+#+BEGIN_SRC scheme :tangle tests.d/00000004-parse-difference.output
+2-1
+
+#+END_SRC
+** 00000005 Product
+#+BEGIN_SRC scheme :tangle tests.d/00000005-parse-prod.input
+1*2
+
+#+END_SRC
+#+BEGIN_SRC scheme :tangle tests.d/00000005-parse-prod.output
+1*2
+
+#+END_SRC
+** 00000006 Fraction
+#+BEGIN_SRC scheme :tangle tests.d/00000006-parse-frac.input
+1/2
+
+#+END_SRC
+#+BEGIN_SRC scheme :tangle tests.d/00000006-parse-frac.output
+1/2
+
+#+END_SRC
