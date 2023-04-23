@@ -54,3 +54,21 @@ a
 1/2
 
 #+END_SRC
+** 00000007 Group
+#+BEGIN_SRC scheme :tangle tests.d/00000007-parse-group.input
+(1+1)/2
+
+#+END_SRC
+#+BEGIN_SRC scheme :tangle tests.d/00000007-parse-group.output
+(1+1)/2
+
+#+END_SRC
+** 00000008 unGroup
+#+BEGIN_SRC scheme :tangle tests.d/00000008-parse-ungroup.input
+(1*2)+3
+
+#+END_SRC
+#+BEGIN_SRC scheme :tangle tests.d/00000008-parse-ungroup.output
+1*2+3
+
+#+END_SRC

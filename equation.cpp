@@ -38,7 +38,7 @@ void print(Equation e) {
 
 				bool add_parentheses = false;
 				if (auto* eqq=std::get_if<Equation::EQ_node>(&eq.left->value))
-					add_parentheses = precedent(eqq->op)>prec;
+					add_parentheses = precedent(eqq->op)<prec;
         if (add_parentheses)
 					std::cout << '(';
         print(*eq.left);
@@ -49,7 +49,7 @@ void print(Equation e) {
 				
         add_parentheses = false;
 				if (auto* eqq=std::get_if<Equation::EQ_node>(&eq.right->value))
-					add_parentheses = precedent(eqq->op)>prec;
+					add_parentheses = precedent(eqq->op)<prec;
         if (add_parentheses)
 					std::cout << '(';
         print(*eq.right);
