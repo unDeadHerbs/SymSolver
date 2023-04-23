@@ -81,46 +81,57 @@ auto parse_term(string const& formula,size_t head)
 
 auto parse_product(string const& formula,size_t head)
 	->std::optional<std::pair<Equation,int>>{
-	// term+(('*'?|'/')+product)?
+	// term+(('*'?|'/')+term)*
 	if(auto term=parse_term(formula,head)){
 		auto [t,h]=*term;
 		head=h;
-		if(head>=formula.size()) return term;
-		if(formula[head]=='*' || formula[head]=='/'){
-			auto op= formula[head];
-			head++;
-			if(auto term2=parse_product(formula,head)){
-				auto [t2,h2]=*term2;
-				return {{{Equation::EQ_node({op,{t},{t2}})},h2}};
+		auto ret=t;
+		while(head<formula.size()){
+			if(formula[head]=='*' || formula[head]=='/'){
+				auto op=formula[head++];
+				if(auto term2=parse_term(formula,head)){
+					auto [t2,h2]=*term2;
+					head=h2;
+					ret={Equation::EQ_node({op,{ret},{t2}})};
+				}else{
+					std::cerr <<"Error: Back track in parse_product."<<std::endl;
+					return {{ret,head-1}};
+				}
 			}else
-				return {};
-		}else
-			if(auto term2=parse_product(formula,head)){
-				auto [t2,h2]=*term2;
-				return {{{Equation::EQ_node({'*',{t},{t2}})},h2}};
-			}else
-				return term;
+				if(auto term2=parse_term(formula,head)){
+					auto [t2,h2]=*term2;
+					head=h2;
+					ret={Equation::EQ_node({'*',{ret},{t2}})};
+				}else
+					return {{ret,head}};
+		}
+		return {{ret,head}};
 	}else
 		return {};
 }
 
 auto parse_sum(string const& formula,size_t head)
 	->std::optional<std::pair<Equation,int>>{
-	// product+([+-]+sum)?
+	// product+([+-]+product)*
 	if(auto term=parse_product(formula,head)){
 		auto [t,h]=*term;
 		head=h;
-		if(head>=formula.size()) return term;
-		if(formula[head]=='+' || formula[head]=='-'){
-			auto op=formula[head];
-			head++;
-			if(auto term2=parse_sum(formula,head)){
-				auto [t2,h2]=*term2;
-				return {{{Equation::EQ_node({op,{t},{t2}})},h2}};
+		auto ret=t;
+		while(head<formula.size()){
+			if(formula[head]=='+' || formula[head]=='-'){
+				auto op=formula[head++];
+				if(auto term2=parse_product(formula,head)){
+					auto [t2,h2]=*term2;
+					head=h2;
+					ret={Equation::EQ_node({op,{ret},{t2}})};
+				}else{
+					std::cerr <<"Error: Back track in parse_sum."<<std::endl;
+					return {{ret,head-1}};
+				}
 			}else
-				return {};
-		}else
-			return term;
+				return {{ret,head}};
+		}
+		return {{ret,head}};
 	}else
 		return {};
 }

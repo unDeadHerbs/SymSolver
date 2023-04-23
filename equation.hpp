@@ -19,8 +19,13 @@ struct Equation {
 		EQ_node(Operator const,Equation const&,Equation const&);
 		EQ_node(char const,Equation const&,Equation const&);
 		EQ_node(EQ_node const&); // Allow copying the pointers
+		EQ_node(EQ_node&&)=default;
+		EQ_node& operator=(EQ_node const&);
 	};
 	std::variant<double,EQ_node,Variable> value;
+	Equation(double v):value(v){};
+	Equation(EQ_node v):value(v){};
+	Equation(Variable v):value(v){};
 };
 
 int precedent(char op);

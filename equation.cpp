@@ -2,11 +2,14 @@
 #include <iostream>
 
 // Copied from cppreference, not sure why its not in the std namespace already.
+// This lets std::visit take a set of lambdas.
 template<class... Ts>
 struct overloaded : Ts... { using Ts::operator()...; };
 template<class... Ts>
 overloaded(Ts...) -> overloaded<Ts...>;
 
+
+// The two cast "operators" for the Operator type.
 Equation::Operator constexpr Equation::to_Operator(char const c){
 	switch(c){
 	case '+': return Operator::ADD;
@@ -26,6 +29,9 @@ char constexpr Equation::to_sym(Operator const op){
 	}
 }
 
+//
+// Fixing the semantics of "unique_ptr" until I switch to a COW.
+//
 Equation::EQ_node::EQ_node(Operator const _op,Equation const& _l,Equation const& _r)
 	:op(_op){
 	left=std::make_unique<Equation>(_l); // Not sure why this isn't just the constructor
@@ -44,6 +50,15 @@ Equation::EQ_node::EQ_node(EQ_node const& eq)
 	right=std::make_unique<Equation>(*eq.right);
 }
 
+Equation::EQ_node& Equation::EQ_node::operator=(Equation::EQ_node const& rhs){
+	op=rhs.op;
+	left=std::make_unique<Equation>(*rhs.left);
+	right=std::make_unique<Equation>(*rhs.right);
+	return *this;
+}
+
+
+// The actual things that belong in this file.
 int precedent(Equation::Operator op){
 	switch(op){
 	case Equation::Operator::ADD: case Equation::Operator::SUBTRACT:
@@ -51,6 +66,15 @@ int precedent(Equation::Operator op){
 	case Equation::Operator::MULTIPLY: case Equation::Operator::DIVIDE:
 		return 2;
 	}}
+
+bool right_binding(Equation::Operator op){
+	switch(op){
+	case Equation::Operator::ADD: case Equation::Operator::MULTIPLY:
+		return false;
+	 case Equation::Operator::SUBTRACT: case Equation::Operator::DIVIDE:
+		return true;
+	}}
+
 
 void print(Equation e) {
 	std::visit(overloaded{
@@ -72,7 +96,7 @@ void print(Equation e) {
 				
         add_parentheses = false;
 				if (auto* eqq=std::get_if<Equation::EQ_node>(&eq.right->value))
-					add_parentheses = precedent(eqq->op)<prec;
+					add_parentheses = precedent(eqq->op)<prec || (precedent(eqq->op)==prec && right_binding(eq.op));
         if (add_parentheses)
 					std::cout << '(';
         print(*eq.right);

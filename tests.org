@@ -72,3 +72,66 @@ a
 1*2+3
 
 #+END_SRC
+** 00000009 unGroup 2
+#+BEGIN_SRC scheme :tangle tests.d/00000009-parse-ungroup2.input
+1+(2+3)
+
+#+END_SRC
+#+BEGIN_SRC scheme :tangle tests.d/00000009-parse-ungroup2.output
+1+2+3
+
+#+END_SRC
+** 00000010 Group 2
+#+BEGIN_SRC scheme :tangle tests.d/00000010-parse-group2.input
+1-(2+3)
+
+#+END_SRC
+#+BEGIN_SRC scheme :tangle tests.d/00000010-parse-group2.output
+1-(2+3)
+
+#+END_SRC
+** 00000011 unGroup 3
+#+BEGIN_SRC scheme :tangle tests.d/00000011-parse-ungroup3.input
+1-2+3
+
+#+END_SRC
+#+BEGIN_SRC scheme :tangle tests.d/00000011-parse-ungroup3.output
+1-2+3
+
+#+END_SRC
+** 00000012 unGroup 4
+#+BEGIN_SRC scheme :tangle tests.d/00000012-parse-ungroup4.input
+1*(2*3)
+
+#+END_SRC
+#+BEGIN_SRC scheme :tangle tests.d/00000012-parse-ungroup4.output
+1*2*3
+
+#+END_SRC
+** 00000013 Group 3
+#+BEGIN_SRC scheme :tangle tests.d/00000013-parse-group3.input
+1/(2*3)
+
+#+END_SRC
+#+BEGIN_SRC scheme :tangle tests.d/00000013-parse-group3.output
+1/(2*3)
+
+#+END_SRC
+** 00000014 unGroup 5
+#+BEGIN_SRC scheme :tangle tests.d/00000014-parse-ungroup5.input
+1/2*3
+
+#+END_SRC
+#+BEGIN_SRC scheme :tangle tests.d/00000014-parse-ungroup5.output
+1/2*3
+
+#+END_SRC
+** 00000015 unGroup 6
+#+BEGIN_SRC scheme :tangle tests.d/00000015-parse-ungroup6.input
+1-2*3
+
+#+END_SRC
+#+BEGIN_SRC scheme :tangle tests.d/00000015-parse-ungroup6.output
+1-2*3
+
+#+END_SRC
