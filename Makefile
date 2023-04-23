@@ -35,12 +35,12 @@ CODE_FILES    = $(CCODE_FILES) $(CPPCODE_FILES)
 # Describe the actual program structure.
 # These This is the only important line for building the program.
 ##
-parse: parse.o parser.o equation.o
+parser: parser.o parse.o equation.o
 	$(CXX) $(CXXFLAGS) -o $@ $^
 
-all: parse
+all: parser
 clean_targets:
-	-rm parse
+	-rm parser
 
 ##
 # Code to check for `#include' statements.

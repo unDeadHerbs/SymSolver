@@ -1,5 +1,5 @@
-#ifndef __PARSER_HPP__
-#define __PARSER_HPP__
+#ifndef __PARSE_HPP__
+#define __PARSE_HPP__
 
 #include "equation.hpp"
 

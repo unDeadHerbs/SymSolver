@@ -1,5 +1,5 @@
 .dep
-parse
+parser
 testrunner
 tests.d
 tests.r
