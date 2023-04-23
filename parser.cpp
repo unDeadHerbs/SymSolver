@@ -1,16 +1,22 @@
 #include "parser.hpp"
 #include <optional>
 #include <iostream> // for std::cerr
+#include <sstream>
+
 using std::string;
 
 auto parse_number(string const& formula,size_t head)
 	->std::optional<std::pair<double,int>>{
-	if(head<formula.size() && std::isdigit(formula[head])){
-		int v=0;
-		do
-			v=v*10+formula[head++]-'0';
-		while(head<formula.size() && std::isdigit(formula[head]));
-		return {{(double)v,head}}; // TODO: Handle doubles. 
+	if(head<formula.size() &&(std::isdigit(formula[head]) || formula[head]=='.')){
+		std::istringstream buf(formula.substr(head));
+		double v;
+		buf >> v;
+		//std::cerr<<"[NUMBER] val = "<<v<<std::endl;
+		//std::cerr<<"[NUMBER] tellg = "<<buf.tellg()<<std::endl;
+		if(buf.tellg()==-1)
+			return {{v,formula.size()}};
+		else
+			return {{v,head+buf.tellg()}};
 	}else
 		return {};
 }
