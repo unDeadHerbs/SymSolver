@@ -274,15 +274,64 @@ x/2
 #+END_SRC
 ** 00010010 Zero Product 5
 #+BEGIN_SRC scheme :tangle tests.d/00010010-simplifyer-zero_prod_5.input
-0/3
+0/x
 #+END_SRC
 #+BEGIN_SRC scheme :tangle tests.d/00010010-simplifyer-zero_prod_5.output
 0
 #+END_SRC
 ** 00010011 Zero Sum
 #+BEGIN_SRC scheme :tangle tests.d/00010011-simplifyer-zero_sum.input
-0+3
+0+x
 #+END_SRC
 #+BEGIN_SRC scheme :tangle tests.d/00010011-simplifyer-zero_sum.output
+x
+#+END_SRC
+** 00010012 Arithmetic 1
+#+BEGIN_SRC scheme :tangle tests.d/00010012-simplifyer-arithmetic_1.input
+1+2
+#+END_SRC
+#+BEGIN_SRC scheme :tangle tests.d/00010012-simplifyer-arithmetic_1.output
 3
+#+END_SRC
+** 00010013 Arithmetic 2
+#+BEGIN_SRC scheme :tangle tests.d/00010013-simplifyer-arithmetic_2.input
+1+2+3
+#+END_SRC
+#+BEGIN_SRC scheme :tangle tests.d/00010013-simplifyer-arithmetic_2.output
+6
+#+END_SRC
+** 00010014 Arithmetic 3
+#+BEGIN_SRC scheme :tangle tests.d/00010014-simplifyer-arithmetic_3.input
+1*2*3*4
+#+END_SRC
+#+BEGIN_SRC scheme :tangle tests.d/00010014-simplifyer-arithmetic_3.output
+24
+#+END_SRC
+** 00010015 Arithmetic 4
+#+BEGIN_SRC scheme :tangle tests.d/00010015-simplifyer-arithmetic_4.input
+(1+2)*(3+4)
+#+END_SRC
+#+BEGIN_SRC scheme :tangle tests.d/00010015-simplifyer-arithmetic_4.output
+21
+#+END_SRC
+** 00010016 Arithmetic 5
+#+BEGIN_SRC scheme :tangle tests.d/00010016-simplifyer-arithmetic_5.input
+(3*4)/(1+2)
+#+END_SRC
+#+BEGIN_SRC scheme :tangle tests.d/00010016-simplifyer-arithmetic_5.output
+4
+#+END_SRC
+** 00010017 Arithmetic 6
+#+BEGIN_SRC scheme :tangle tests.d/00010017-simplifyer-arithmetic_6.input
+2-1
+#+END_SRC
+#+BEGIN_SRC scheme :tangle tests.d/00010017-simplifyer-arithmetic_6.output
+1
+#+END_SRC
+** 00010018 Arithmetic 7
+#+BEGIN_SRC scheme :tangle tests.d/00010018-simplifyer-arithmetic_7.input
+0-x
+#+END_SRC
+#+BEGIN_SRC scheme :tangle tests.d/00010018-simplifyer-arithmetic_7.output
+-1*x
 #+END_SRC

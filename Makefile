@@ -14,7 +14,7 @@ SHELL = /bin/bash
 COLOR = always
 CXX = clang++
 LanguageVersion = -std=c++20
-Warnings = -Wall -Werror -Wextra
+Warnings = -Wall -Werror -Wextra -Wshadow
 NoWarn = -Wno-dangling-else -Wno-c++98-compat -Wno-padded -Wno-missing-prototypes -Wno-dangling-else -Wno-old-style-cast -Wno-unused-macros -Wno-comma -Wno-return-std-move
 #SANS=address
 ifeq ($(SANS),)

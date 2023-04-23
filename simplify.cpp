@@ -30,8 +30,9 @@ void simplify_inplace(Equation& e) {
 							auto tmp=*eq.right;
 							e=tmp;
 							return;}
-						else
-							;// TODO: integer optimization
+						else if (auto* v2 = std::get_if<double>(&eq.right->value)){
+							e={*v+*v2}; // Integer optimization
+							return;}
 					if (auto* v = std::get_if<double>(&eq.right->value))
 						if(*v==0){
 							auto tmp=*eq.left;
@@ -43,10 +44,12 @@ void simplify_inplace(Equation& e) {
 				case Equation::Operator::SUBTRACT:
 					//std::cerr<<"Debug: case SUBTRACT"<<std::endl;
 					if (auto* v = std::get_if<double>(&eq.left->value))
-						if(*v==0)
-							;//TODO: {{'*',-1,eq.right};return;}
+						if(*v==0){
+							eq={Equation::Operator::MULTIPLY,Equation(-1),*eq.right};return;}
 						else
-							;// TODO: integer optimization
+							if (auto* v2 = std::get_if<double>(&eq.right->value)){
+								e={*v-*v2}; // Integer optimization
+								return;}
 					if (auto* v = std::get_if<double>(&eq.right->value))
 						if(*v==0){
 							auto tmp=*eq.left;
@@ -66,7 +69,9 @@ void simplify_inplace(Equation& e) {
 							e=tmp;
 							return;
 						}else
-							;// TODO: integer optimization
+							if (auto* v2 = std::get_if<double>(&eq.right->value)){
+								e={*v**v2}; // Integer optimization
+								return;}
 					}else
 						; // TODO: Sort Variables, convert to exponents, etc.
 					if (auto* v = std::get_if<double>(&eq.right->value))
@@ -85,7 +90,9 @@ void simplify_inplace(Equation& e) {
 						else if(*v==1)
 							;// TODO: 1/(1/x)=x
 						else
-							;// TODO: integer optimization
+							if (auto* v2 = std::get_if<double>(&eq.right->value)){
+								e={*v/ *v2}; // Integer optimization
+								return;}
 					if (auto* v = std::get_if<double>(&eq.right->value))
 						if(*v==0) ;//{NAN;return;}
 						else if(*v==1){
