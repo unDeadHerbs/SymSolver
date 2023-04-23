@@ -1,0 +1,29 @@
+#+STARTUP: showstars indent inlineimages
+* Parser Tests
+Working on the parser first as it both seems like the logical place
+to start and is kind of needed to write tests for the other modules.
+** 00000001 Number
+#+BEGIN_SRC scheme :tangle tests.d/00000001-parse-number.input
+3
+#+END_SRC
+#+BEGIN_SRC scheme :tangle tests.d/00000001-parse-number.output
+3
+#+END_SRC
+** 00000002 Variable
+#+BEGIN_SRC scheme :tangle tests.d/00000002-parse-variable.input
+a
+
+#+END_SRC
+#+BEGIN_SRC scheme :tangle tests.d/00000002-parse-variable.output
+a
+
+#+END_SRC
+** 00000003 Sum
+#+BEGIN_SRC scheme :tangle tests.d/00000003-parse-sum.input
+1+2
+
+#+END_SRC
+#+BEGIN_SRC scheme :tangle tests.d/00000003-parse-sum.output
+1+2
+
+#+END_SRC

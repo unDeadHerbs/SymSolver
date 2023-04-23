@@ -1,0 +1,6 @@
+.dep
+parse
+testrunner
+tests.d
+tests.r
+Doxyfile
