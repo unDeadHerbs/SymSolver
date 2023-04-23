@@ -35,6 +35,8 @@ CODE_FILES    = $(CCODE_FILES) $(CPPCODE_FILES)
 # Describe the actual program structure.
 # These This is the only important line for building the program.
 ##
+simplifyer: simplifyer.o simplify.o parse.o equation.o
+	$(CXX) $(CXXFLAGS) -o $@ $^
 parser: parser.o parse.o equation.o
 	$(CXX) $(CXXFLAGS) -o $@ $^
 
@@ -119,6 +121,8 @@ TODO:
 # Tests are of the form $(TEST_DIR)/number-progam-testname.input $(TEST_DIR)/number-progam-testname.output
 testrunner: $(TEST_FILES) Makefile tests.org | $(TEST_DIR)
 	@echo "Building test files"
+	# TODO: Move the test dir, update it, move it back
+	# This will keep the old timestamps if there was no diff and prevent rerunning tests
 	-@rm $(TEST_DIR)/*
 	@emacs --batch tests.org --eval "(setq org-src-preserve-indentation t)" -f org-babel-tangle
 	@echo "Building tests list"

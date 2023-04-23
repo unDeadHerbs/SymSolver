@@ -207,3 +207,82 @@ x/2
 x/2
 
 #+END_SRC
+
+* Simplifyer Test
+** 00010001 Number
+#+BEGIN_SRC scheme :tangle tests.d/00010001-simplifyer-number.input
+3
+#+END_SRC
+#+BEGIN_SRC scheme :tangle tests.d/00010001-simplifyer-number.output
+3
+#+END_SRC
+** 00010002 One Product 1
+#+BEGIN_SRC scheme :tangle tests.d/00010002-simplifyer-one_prod.input
+1*3
+#+END_SRC
+#+BEGIN_SRC scheme :tangle tests.d/00010002-simplifyer-one_prod.output
+3
+#+END_SRC
+** 00010003 One Product 2
+#+BEGIN_SRC scheme :tangle tests.d/00010003-simplifyer-one_prod_2.input
+3*1
+#+END_SRC
+#+BEGIN_SRC scheme :tangle tests.d/00010003-simplifyer-one_prod_2.output
+3
+#+END_SRC
+** 00010004 One Product 3
+#+BEGIN_SRC scheme :tangle tests.d/00010004-simplifyer-one_prod_3.input
+1*1*3*1*1
+#+END_SRC
+#+BEGIN_SRC scheme :tangle tests.d/00010004-simplifyer-one_prod_3.output
+3
+#+END_SRC
+** 00010005 One Product 4
+#+BEGIN_SRC scheme :tangle tests.d/00010005-simplifyer-one_prod_4.input
+1*1*3*1*x*1
+#+END_SRC
+#+BEGIN_SRC scheme :tangle tests.d/00010005-simplifyer-one_prod_4.output
+3*x
+#+END_SRC
+** 00010006 Zero Product 1
+#+BEGIN_SRC scheme :tangle tests.d/00010006-simplifyer-zero_prod.input
+0*3
+#+END_SRC
+#+BEGIN_SRC scheme :tangle tests.d/00010006-simplifyer-zero_prod.output
+0
+#+END_SRC
+** 00010007 Zero Product 2
+#+BEGIN_SRC scheme :tangle tests.d/00010007-simplifyer-zero_prod_2.input
+3*0
+#+END_SRC
+#+BEGIN_SRC scheme :tangle tests.d/00010007-simplifyer-zero_prod_2.output
+0
+#+END_SRC
+** 00010008 Zero Product 3
+#+BEGIN_SRC scheme :tangle tests.d/00010008-simplifyer-zero_prod_3.input
+1*1*3*1*0*1
+#+END_SRC
+#+BEGIN_SRC scheme :tangle tests.d/00010008-simplifyer-zero_prod_3.output
+0
+#+END_SRC
+** 00010009 Zero Product 4
+#+BEGIN_SRC scheme :tangle tests.d/00010009-simplifyer-zero_prod_4.input
+1*0*3*1*x*1
+#+END_SRC
+#+BEGIN_SRC scheme :tangle tests.d/00010009-simplifyer-zero_prod_4.output
+0
+#+END_SRC
+** 00010010 Zero Product 5
+#+BEGIN_SRC scheme :tangle tests.d/00010010-simplifyer-zero_prod_5.input
+0/3
+#+END_SRC
+#+BEGIN_SRC scheme :tangle tests.d/00010010-simplifyer-zero_prod_5.output
+0
+#+END_SRC
+** 00010011 Zero Sum
+#+BEGIN_SRC scheme :tangle tests.d/00010011-simplifyer-zero_sum.input
+0+3
+#+END_SRC
+#+BEGIN_SRC scheme :tangle tests.d/00010011-simplifyer-zero_sum.output
+3
+#+END_SRC
