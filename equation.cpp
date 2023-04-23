@@ -7,26 +7,49 @@ struct overloaded : Ts... { using Ts::operator()...; };
 template<class... Ts>
 overloaded(Ts...) -> overloaded<Ts...>;
 
-Equation::EQ_node::EQ_node(char const _op,Equation const& _l,Equation const& _r)
-			:op(_op){
-			left=std::make_unique<Equation>(_l); // Not sure why this isn't just the constructor
-			right=std::make_unique<Equation>(_r);
-		}
+Equation::Operator constexpr Equation::to_Operator(char const c){
+	switch(c){
+	case '+': return Operator::ADD;
+	case '-': return Operator::SUBTRACT;
+	case '*': return Operator::MULTIPLY;
+	case '/': return Operator::DIVIDE;
+	default: throw "Invalid Operator"; // TODO: That's not very constexper of you.
+	}
+}
 
-Equation::EQ_node::EQ_node(EQ_node const& eq):
-	op(eq.op){
-			left=std::make_unique<Equation>(*eq.left); // Not sure why this isn't just the constructor
-			right=std::make_unique<Equation>(*eq.right);
-		}
-
-int precedent(char op){
+char constexpr Equation::to_sym(Operator const op){
 	switch(op){
-	case '+': case '-':
+	case Operator::ADD: return '+';
+	case Operator::SUBTRACT: return '-';
+	case Operator::MULTIPLY: return '*';
+	case Operator::DIVIDE: return '/';
+	}
+}
+
+Equation::EQ_node::EQ_node(Operator const _op,Equation const& _l,Equation const& _r)
+	:op(_op){
+	left=std::make_unique<Equation>(_l); // Not sure why this isn't just the constructor
+	right=std::make_unique<Equation>(_r);
+}
+
+Equation::EQ_node::EQ_node(char const _op,Equation const& _l,Equation const& _r)
+	:op(Equation::to_Operator(_op)){
+	left=std::make_unique<Equation>(_l); // Not sure why this isn't just the constructor
+	right=std::make_unique<Equation>(_r);
+}
+
+Equation::EQ_node::EQ_node(EQ_node const& eq)
+	:op(eq.op){
+	left=std::make_unique<Equation>(*eq.left); // Not sure why this isn't just the constructor
+	right=std::make_unique<Equation>(*eq.right);
+}
+
+int precedent(Equation::Operator op){
+	switch(op){
+	case Equation::Operator::ADD: case Equation::Operator::SUBTRACT:
 		return 1;
-	case '*': case '/':
+	case Equation::Operator::MULTIPLY: case Equation::Operator::DIVIDE:
 		return 2;
-	default:
-		return 3;
 	}}
 
 void print(Equation e) {
@@ -45,7 +68,7 @@ void print(Equation e) {
         if (add_parentheses)
 					std::cout << ')';
 				
-				std::cout << eq.op;
+				std::cout << Equation::to_sym(eq.op);
 				
         add_parentheses = false;
 				if (auto* eqq=std::get_if<Equation::EQ_node>(&eq.right->value))
