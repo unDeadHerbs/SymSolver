@@ -1,7 +1,11 @@
 #+STARTUP: showstars indent inlineimages
-* Parser Tests
-Working on the parser first as it both seems like the logical place
-to start and is kind of needed to write tests for the other modules.
+The order these are written in has two purposes:
+1. If a bug is introduced, a fairly minimal example should be found by these tests.
+2. If somebody else wants to use this project as an exercise, the
+   tests will be presented in a reasonable order to perform TDD.
+* Parser Tests 1
+Parse and display the parsed equation.  Introduces numbers, variables,
+the "4 functions", and parenthesis.
 ** 00000001 Number
 #+BEGIN_SRC scheme :tangle tests.d/00000001-parser-number.input
 3
