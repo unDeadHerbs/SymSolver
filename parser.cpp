@@ -18,12 +18,16 @@ int main(int argc, char** argv){
 	if (optind != argc-1)
 		usage(argv[0]);
 
-	std::ifstream file(argv[optind]);
-	std::string formula;
-	std::getline(file,formula);
-	Equation eq= parse_formula(formula);
-	print(eq);
-	std::cout<<std::endl;
+	try{
+		std::ifstream file(argv[optind]);
+		std::string formula;
+		std::getline(file,formula);
+		Equation eq= parse_formula(formula);
+		print(eq);
+		std::cout<<std::endl;
+	}catch(const char* e){
+		std::cerr<<"[ERROR] Caught unhandled Exception: \""<<e<<"\""<<std::endl;
+	}
 
 	return 0;
 }

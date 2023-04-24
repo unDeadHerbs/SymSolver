@@ -5,9 +5,16 @@
 
 using std::string;
 
-auto parse_number(string const& formula,size_t head)
-	->std::optional<std::pair<double,int>>{
-	if(head<formula.size() &&(std::isdigit(formula[head]) || formula[head]=='.')){
+auto parse_number(string const& formula,size_t head,bool allow_unary_minus)
+	->std::optional<std::pair<double,size_t>>{
+	if(allow_unary_minus)
+		// TODO: it seems that >> can extract just the - and then fail?
+		allow_unary_minus=head+1<formula.size() && (std::isdigit(formula[head+1])
+																								|| formula[head+1]=='.');
+	if(head<formula.size()
+		 && ( std::isdigit(formula[head])
+					|| formula[head]=='.'
+					|| (allow_unary_minus && formula[head]=='-'))){
 		std::istringstream buf(formula.substr(head));
 		double v;
 		buf >> v;
@@ -22,7 +29,7 @@ auto parse_number(string const& formula,size_t head)
 }
 
 auto parse_latex_basic(string const& formula,size_t head)
-	->std::optional<std::pair<std::string,int>>{
+	->std::optional<std::pair<std::string,size_t>>{
 	if(head>=formula.size()) return {};
 	if(formula[head]=='{'){
 		std::string ret({formula[head++]});
@@ -35,7 +42,7 @@ auto parse_latex_basic(string const& formula,size_t head)
 		}
 		return {{ret,head}};
 	}
-	if(auto on=parse_number(formula,head)){
+	if(auto on=parse_number(formula,head,false)){
 		auto [n,h]=*on;
 		return {{std::to_string(n),h}};
 	}
@@ -44,7 +51,7 @@ auto parse_latex_basic(string const& formula,size_t head)
 }
 
 auto parse_variable(string const& formula,size_t head)
-	->std::optional<std::pair<Equation,int>>{
+	->std::optional<std::pair<Equation,size_t>>{
 	if(head<formula.size() && std::isalpha(formula[head])){
 		std::string var({formula[head++]});
 		if(head<formula.size() && formula[head]=='_'){
@@ -63,14 +70,14 @@ auto parse_variable(string const& formula,size_t head)
 }
 
 auto parse_parenthetical(string const& formula,size_t head)
-	->std::optional<std::pair<Equation,int>>;
+	->std::optional<std::pair<Equation,size_t>>;
 
-auto parse_term(string const& formula,size_t head)
-	->std::optional<std::pair<Equation,int>>{
+auto parse_term(string const& formula,size_t head,bool allow_leading_unary)
+	->std::optional<std::pair<Equation,size_t>>{
 	// parenthesized | number | variable
 	if(auto par=parse_parenthetical(formula,head))
 		return par;
-	if(auto num=parse_number(formula,head)){
+	if(auto num=parse_number(formula,head,allow_leading_unary)){
 		auto [n,h]=*num;
 		return {{{n},h}};
 	}
@@ -79,17 +86,17 @@ auto parse_term(string const& formula,size_t head)
 	return {};
 }
 
-auto parse_product(string const& formula,size_t head)
-	->std::optional<std::pair<Equation,int>>{
+auto parse_product(string const& formula,size_t head,bool allow_leading_unary)
+	->std::optional<std::pair<Equation,size_t>>{
 	// term+(('*'?|'/')+term)*
-	if(auto term=parse_term(formula,head)){
+	if(auto term=parse_term(formula,head,allow_leading_unary)){
 		auto [t,h]=*term;
 		head=h;
 		auto ret=t;
 		while(head<formula.size()){
 			if(formula[head]=='*' || formula[head]=='/'){
 				auto op=formula[head++];
-				if(auto term2=parse_term(formula,head)){
+				if(auto term2=parse_term(formula,head,true)){
 					auto [t2,h2]=*term2;
 					head=h2;
 					ret={Equation::Op_node({op,{ret},{t2}})};
@@ -98,7 +105,7 @@ auto parse_product(string const& formula,size_t head)
 					return {{ret,head-1}};
 				}
 			}else
-				if(auto term2=parse_term(formula,head)){
+				if(auto term2=parse_term(formula,head,false)){
 					auto [t2,h2]=*term2;
 					head=h2;
 					ret={Equation::Op_node({'*',{ret},{t2}})};
@@ -110,17 +117,17 @@ auto parse_product(string const& formula,size_t head)
 		return {};
 }
 
-auto parse_sum(string const& formula,size_t head)
-	->std::optional<std::pair<Equation,int>>{
+auto parse_sum(string const& formula,size_t head,bool allow_leading_unary)
+	->std::optional<std::pair<Equation,size_t>>{
 	// product+([+-]+product)*
-	if(auto term=parse_product(formula,head)){
+	if(auto term=parse_product(formula,head,allow_leading_unary)){
 		auto [t,h]=*term;
 		head=h;
 		auto ret=t;
 		while(head<formula.size()){
 			if(formula[head]=='+' || formula[head]=='-'){
 				auto op=formula[head++];
-				if(auto term2=parse_product(formula,head)){
+				if(auto term2=parse_product(formula,head,true)){
 					auto [t2,h2]=*term2;
 					head=h2;
 					ret={Equation::Op_node({op,{ret},{t2}})};
@@ -136,17 +143,17 @@ auto parse_sum(string const& formula,size_t head)
 		return {};
 }
 
-auto parse_eq(string const& formula,size_t head)
-	->std::optional<std::pair<Equation,int>>{
-	return parse_sum(formula,head); // good enough for now
+auto parse_exp(string const& formula,size_t head)
+	->std::optional<std::pair<Equation,size_t>>{
+	return parse_sum(formula,head,true); // good enough for now
 }
 
 auto parse_parenthetical(string const& formula,size_t head)
-	->std::optional<std::pair<Equation,int>>{
-	// '('+equation+')'
+	->std::optional<std::pair<Equation,size_t>>{
+	// '('+expression+')'
 	if(head>=formula.size()) return {};
 	if(formula[head++]!='(') return {};
-	if(auto eq=parse_eq(formula,head)){
+	if(auto eq=parse_exp(formula,head)){
 		auto [e,h]=*eq;
 		head=h;
 		if(head>=formula.size()) return {};
@@ -156,8 +163,8 @@ auto parse_parenthetical(string const& formula,size_t head)
 }
 
 Equation parse_formula(string const& formula) {
-	if(auto eq= parse_eq(formula,0))
-		// Check that all are parsed
-		return eq->first;
+	if(auto eq= parse_exp(formula,0))
+		if(eq->second == formula.size())
+			return eq->first;
 	throw "Unable to Parse";
 }
