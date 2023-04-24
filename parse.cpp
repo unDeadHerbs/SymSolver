@@ -40,11 +40,12 @@ auto parse_latex_basic(string const& formula,size_t head)
 			}
 			ret += formula[head++];
 		}
+		ret += formula[head++];
 		return {{ret,head}};
 	}
 	if(auto on=parse_number(formula,head,false)){
 		auto [n,h]=*on;
-		return {{std::to_string(n),h}};
+		return {{formula.substr(head,h),h}};
 	}
 	std::cerr <<"Warning: LaTeX group requested but not found, using one char." << std::endl;
 	return {{{formula[head]},head+1}};
