@@ -33,7 +33,7 @@ auto parse_latex_basic(string const& formula,size_t head)
 	if(head>=formula.size()) return {};
 	if(formula[head]=='{'){
 		std::string ret({formula[head++]});
-		while(formula[head]!='}'){
+		while(formula[head]!='}'){ // TODO: Use std::find and substr
 			if(head>=formula.size()){
 				std::cerr <<"Error: LaTeX group started but not ended." << std::endl;
 				return {};
@@ -44,7 +44,7 @@ auto parse_latex_basic(string const& formula,size_t head)
 		return {{ret,head}};
 	}
 	if(auto on=parse_number(formula,head,false)){
-		auto [n,h]=*on;
+		auto [n,h]=*on; // just grabbing the length
 		return {{formula.substr(head,h),h}};
 	}
 	std::cerr <<"Warning: LaTeX group requested but not found, using one char." << std::endl;
