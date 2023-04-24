@@ -229,30 +229,21 @@ x/2
 1.2
 
 #+END_SRC
-** TODO 00000026 Big Numbers
-/#+BEGIN_SRC scheme :tangle tests.d/00000026-parser-decimal.input
-12345678901234567890
-
-/#+END_SRC
-/#+BEGIN_SRC scheme :tangle tests.d/00000026-parser-decimal.output
-12345678901234567890
-
-/#+END_SRC
-** 00000027 Variable Names 1
-#+BEGIN_SRC scheme :tangle tests.d/00000027-parser-var_names_1.input
+** 00000026 Variable Names 1
+#+BEGIN_SRC scheme :tangle tests.d/00000026-parser-var_names_1.input
 x_1
 
 #+END_SRC
-#+BEGIN_SRC scheme :tangle tests.d/00000027-parser-var_names_1.output
+#+BEGIN_SRC scheme :tangle tests.d/00000026-parser-var_names_1.output
 x_1
 
 #+END_SRC
-** 00000028 Variable Names 2
-#+BEGIN_SRC scheme :tangle tests.d/00000028-parser-var_names_2.input
+** 00000027 Variable Names 2
+#+BEGIN_SRC scheme :tangle tests.d/00000027-parser-var_names_2.input
 x_{name}
 
 #+END_SRC
-#+BEGIN_SRC scheme :tangle tests.d/00000028-parser-var_names_2.output
+#+BEGIN_SRC scheme :tangle tests.d/00000027-parser-var_names_2.output
 x_{name}
 
 #+END_SRC
