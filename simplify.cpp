@@ -27,6 +27,7 @@ bool simplify_inplace(Equation& e) {
 			// The =tmp= variable is because of smart pointer dereferencing
 			// and the destructor being called in the assignment operation.
 			// TODO: use std::decay<decltype(e)> or something
+			// TODO: Sometimes the argument needs casting pre-call.  Why?
 			#define Return(X) do{Equation tmp(X);e=tmp;Changed();}while(0)
 			
 			[](double){NoChange();},
@@ -40,47 +41,44 @@ bool simplify_inplace(Equation& e) {
 				switch(eq.op){
 				case Equation::Operator::ADD:
 					//std::cerr<<"Debug: case ADD"<<std::endl;
-					if (auto* v = std::get_if<double>(&eq.left->value))
-						if(*v==0)
-							Return(*eq.right);
-						else if (auto* v2 = std::get_if<double>(&eq.right->value))
+					if (auto* v = std::get_if<double>(&eq.left->value)){
+						if(*v==0)	Return(*eq.right);
+						if (auto* v2 = std::get_if<double>(&eq.right->value))
 							Return(*v+*v2); // Integer optimization
-					if (auto* v = std::get_if<double>(&eq.right->value))
-						if(*v==0)
-							Return(*eq.left);
-						else
-							;// TODO: move integers before variables (sort by complexity)
-					break;
+					}if (auto* v = std::get_if<double>(&eq.right->value)){
+						if(*v==0) Return(*eq.left);
+						;// TODO: move integers before variables (sort by complexity)
+					}break;
 				case Equation::Operator::SUBTRACT:
 					//std::cerr<<"Debug: case SUBTRACT"<<std::endl;
-					if (auto* v = std::get_if<double>(&eq.left->value))
+					if (auto* v = std::get_if<double>(&eq.left->value)){
 						if(*v==0) Return(Equation({Equation::Operator::MULTIPLY,Equation(-1),*eq.right}));
-						else if (auto* v2 = std::get_if<double>(&eq.right->value))
+						if (auto* v2 = std::get_if<double>(&eq.right->value))
 							Return(*v-*v2); // Integer optimization
-					if (auto* v = std::get_if<double>(&eq.right->value))
-						if(*v==0) Return(*eq.left);
+					}if (auto* v = std::get_if<double>(&eq.right->value))
+						 if(*v==0) Return(*eq.left);
 					break;
 				case Equation::Operator::MULTIPLY:
 					//std::cerr<<"Debug: case MULTIPLY"<<std::endl;
-					if (auto* v = std::get_if<double>(&eq.left->value)){// TODO: convert to a std::vist to fix shadowing problems
+					if (auto* vln = std::get_if<double>(&eq.left->value)){// TODO: convert to a std::vist to fix shadowing problems
 						//std::cerr<<"Debug: left is v="<<v<<std::endl;
 						//std::cerr<<"Debug: left is *v="<<*v<<std::endl;
-						if((*v)==0) Return(*eq.left);
-						else if(*v==1) Return(*eq.right);
-						else
-							if (auto* v2 = std::get_if<double>(&eq.right->value))
-								Return(*v**v2); // Integer optimization
-					}else if(auto* vhmm = std::get_if<Equation::Variable>(&eq.left->value)){
-						// if other is number, swap order
-						// if other is var, check lex order
+						if(*vln==0) Return(*vln);
+						if(*vln==1) Return(*eq.right);
+						if (auto* vrn = std::get_if<double>(&eq.right->value))
+							Return(*vln**vrn);
+					}else if(auto* vlv = std::get_if<Equation::Variable>(&eq.left->value)){
+						if (auto* vrn = std::get_if<double>(&eq.right->value))
+							Return(Equation({eq.op,*vrn,*vlv}));// if other is number, swap order
+						if(auto* vrv = std::get_if<Equation::Variable>(&eq.right->value))
+							if(vlv->name > vrv->name)
+								Return(Equation({eq.op,*vrv,*vlv}));// if other is var, check lex order
 						// if other is MULTIPLY, swap to have a left deep tree
 					}else
 						;// if both children are + or -, sort by variable, if both same var, sort by constant.
 					if (auto* v = std::get_if<double>(&eq.right->value)){
-						if(*v==0)
-							Return(*eq.right);
-						else if(*v==1)
-							Return(*eq.left);
+						if(*v==0) Return(*eq.right);
+						if(*v==1) Return(*eq.left);
 					}else if(auto* vhmm = std::get_if<Equation::Variable>(&eq.left->value)){
 						// if other is var, check lex order
 						// if other is MULTIPLY, check lex of it's right child
@@ -88,19 +86,16 @@ bool simplify_inplace(Equation& e) {
 					break;
 				case Equation::Operator::DIVIDE:
 					//std::cerr<<"Debug: case DIVIDE"<<std::endl;
-					if (auto* v = std::get_if<double>(&eq.left->value))
-						if(*v==0)
-							Return(*eq.left);
-						else if(*v==1)
-							;// TODO: 1/(1/x)=x
-						else
-							if (auto* v2 = std::get_if<double>(&eq.right->value))
-								Return(*v/ *v2); // Integer optimization
-					if (auto* v = std::get_if<double>(&eq.right->value))
-						if(*v==0)
-							;//{NAN;return true;}
-						else if(*v==1)
-							Return(*eq.left);
+					if (auto* v = std::get_if<double>(&eq.left->value)){
+						if(*v==0) Return(*eq.left); // TODO: Check if 0/0 or add a condition
+						//if(*v==1) ; TODO: 1/(1/x)=x
+						if (auto* v2 = std::get_if<double>(&eq.right->value))
+							Return(*v/ *v2); // Integer optimization
+					}if (auto* v = std::get_if<double>(&eq.right->value)){
+						// if(*v==0) ; TODO: Infinity(unsigned) (undef if 0/0, add a condition)
+						if(*v==1) Return(*eq.left);
+					}
+					break;
 					// TODO: Other operators.
 				}
 				NoChange();
