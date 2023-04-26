@@ -38,69 +38,53 @@ bool simplify_inplace(Equation& e) {
 				if(simplify_inplace(*eq.right))
 					Changed();
 
+				#define Return_Swap() Return(Equation({op,*eq.right,*eq.left}))
+
+				// TODO: Use pattern matching to resyntax this.
 				auto* vln = std::get_if<double>(&eq.left->value);
 				auto* vrn = std::get_if<double>(&eq.right->value);
 				auto* vlv = std::get_if<Equation::Variable>(&eq.left->value);
 				auto* vrv = std::get_if<Equation::Variable>(&eq.right->value);
-				switch(eq.op){
-				case Equation::Operator::ADD:
+				auto op = eq.op;
+				using Equation::Operator::ADD;
+				using Equation::Operator::SUBTRACT;
+				using Equation::Operator::MULTIPLY;
+				using Equation::Operator::DIVIDE;
+				switch(op){
+				case ADD:
 					//std::cerr<<"Debug: case ADD"<<std::endl;
-					if (vln){
-						if(*vln==0)	Return(*eq.right);
-						if(vrn)
-							Return(*vln+*vrn); // Integer optimization
-					}if (vrn){
-						if(*vrn==0) Return(*eq.left);
-						;// TODO: move integers before variables (sort by complexity)
-					}break;
-				case Equation::Operator::SUBTRACT:
+					if(vln && *vln==0) Return(*eq.right);
+					if(vrn && *vrn==0) Return(*eq.left);
+					if(vln && vrn) Return(*vln+*vrn);
+					;// TODO: move integers before variables (sort by complexity)
+					break;
+				case SUBTRACT:
 					//std::cerr<<"Debug: case SUBTRACT"<<std::endl;
-					if (vln){
-						if(*vln==0) Return(Equation({Equation::Operator::MULTIPLY,Equation(-1),*eq.right}));
-						if (vrn)
-							Return(*vln-*vrn); // Integer optimization
-					}if (vrn)
-						 if(*vrn==0) Return(*eq.left);
+					if(vln && *vln==0) Return(Equation({MULTIPLY,Equation(-1),*eq.right}));
+					if(vrn && *vrn==0) Return(*eq.left);
+					if(vln && vrn) Return(*vln-*vrn); // Integer optimization
 					break;
-				case Equation::Operator::MULTIPLY:
+				case MULTIPLY:
 					//std::cerr<<"Debug: case MULTIPLY"<<std::endl;
-					if (vln){
-						//std::cerr<<"Debug: left is v="<<v<<std::endl;
-						//std::cerr<<"Debug: left is *v="<<*v<<std::endl;
-						if(*vln==0) Return(*vln);
-						if(*vln==1) Return(*eq.right);
-						if (vrn)
-							Return(*vln**vrn);
-					}else if(vlv){
-						if (vrn)
-							Return(Equation({eq.op,*vrn,*vlv}));// if other is number, swap order
-						if(vrv)
-							if(vlv->name > vrv->name)
-								Return(Equation({eq.op,*vrv,*vlv}));// if other is var, check lex order
-						// if other is MULTIPLY, swap to have a left deep tree
-					}else
-						;// if both children are + or -, sort by variable, if both same var, sort by constant.
-					if (vrn){
-						if(*vrn==0) Return(*eq.right);
-						if(*vrn==1) Return(*eq.left);
-					}else if(vrv){
-						// if other is var, check lex order
-						// if other is MULTIPLY, check lex of it's right child
-					}
+					if(vln && *vln==0) Return(*vln);
+					if(vln && *vln==1) Return(*eq.right);
+					if(vln && vrn) Return(*vln**vrn);
+					if(vlv && vrn) Return_Swap();
+					if(vlv && vrv && vlv->name > vrv->name) Return_Swap();
+					// if(vlv && vre) Return_Swap();
+					// if(vle && vre) if both children are + or -, sort by variable, if both same var, sort by constant.
+					if(vrn && *vrn==0) Return(*eq.right);
+					if(vrn && *vrn==1) Return(*eq.left);
+					// if(vle && vrv) check lex of it's right child
 					break;
-				case Equation::Operator::DIVIDE:
+				case DIVIDE:
 					//std::cerr<<"Debug: case DIVIDE"<<std::endl;
-					if (vln){
-						if(*vln==0) Return(*eq.left); // TODO: Check if 0/0 or add a condition
-						//if(*vln==1) ; TODO: 1/(1/x)=x
-						if (vrn)
-							Return(*vln/ *vrn); // Integer optimization
-					}if (vrn){
-						// if(*vrn==0) ; TODO: Infinity(unsigned) (undef if 0/0, add a condition)
-						if(*vrn==1) Return(*eq.left);
-					}
+					if(vln && *vln==0) Return(*eq.left); // TODO: Check if 0/0 or add a condition
+					//if(vln && *vln==1) ; TODO: 1/(1/x)=x
+					if (vln && vrn) Return(*vln/ *vrn); // Integer optimization
+					// if(vrn && *vrn==0) ; TODO: Infinity(unsigned) (undef if 0/0, add a condition)
+					if(vrn && *vrn==1) Return(*eq.left);
 					break;
-					// TODO: Other operators.
 				}
 				NoChange();
 			}
