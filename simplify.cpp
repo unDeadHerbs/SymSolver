@@ -37,63 +37,67 @@ bool simplify_inplace(Equation& e) {
 					Changed();
 				if(simplify_inplace(*eq.right))
 					Changed();
-				
+
+				auto* vln = std::get_if<double>(&eq.left->value);
+				auto* vrn = std::get_if<double>(&eq.right->value);
+				auto* vlv = std::get_if<Equation::Variable>(&eq.left->value);
+				auto* vrv = std::get_if<Equation::Variable>(&eq.right->value);
 				switch(eq.op){
 				case Equation::Operator::ADD:
 					//std::cerr<<"Debug: case ADD"<<std::endl;
-					if (auto* v = std::get_if<double>(&eq.left->value)){
-						if(*v==0)	Return(*eq.right);
-						if (auto* v2 = std::get_if<double>(&eq.right->value))
-							Return(*v+*v2); // Integer optimization
-					}if (auto* v = std::get_if<double>(&eq.right->value)){
-						if(*v==0) Return(*eq.left);
+					if (vln){
+						if(*vln==0)	Return(*eq.right);
+						if(vrn)
+							Return(*vln+*vrn); // Integer optimization
+					}if (vrn){
+						if(*vrn==0) Return(*eq.left);
 						;// TODO: move integers before variables (sort by complexity)
 					}break;
 				case Equation::Operator::SUBTRACT:
 					//std::cerr<<"Debug: case SUBTRACT"<<std::endl;
-					if (auto* v = std::get_if<double>(&eq.left->value)){
-						if(*v==0) Return(Equation({Equation::Operator::MULTIPLY,Equation(-1),*eq.right}));
-						if (auto* v2 = std::get_if<double>(&eq.right->value))
-							Return(*v-*v2); // Integer optimization
-					}if (auto* v = std::get_if<double>(&eq.right->value))
-						 if(*v==0) Return(*eq.left);
+					if (vln){
+						if(*vln==0) Return(Equation({Equation::Operator::MULTIPLY,Equation(-1),*eq.right}));
+						if (vrn)
+							Return(*vln-*vrn); // Integer optimization
+					}if (vrn)
+						 if(*vrn==0) Return(*eq.left);
 					break;
 				case Equation::Operator::MULTIPLY:
 					//std::cerr<<"Debug: case MULTIPLY"<<std::endl;
-					if (auto* vln = std::get_if<double>(&eq.left->value)){// TODO: convert to a std::vist to fix shadowing problems
+					if (vln){
 						//std::cerr<<"Debug: left is v="<<v<<std::endl;
 						//std::cerr<<"Debug: left is *v="<<*v<<std::endl;
 						if(*vln==0) Return(*vln);
 						if(*vln==1) Return(*eq.right);
-						if (auto* vrn = std::get_if<double>(&eq.right->value))
+						if (vrn)
 							Return(*vln**vrn);
-					}else if(auto* vlv = std::get_if<Equation::Variable>(&eq.left->value)){
-						if (auto* vrn = std::get_if<double>(&eq.right->value))
+					}else if(vlv){
+						if (vrn)
 							Return(Equation({eq.op,*vrn,*vlv}));// if other is number, swap order
-						if(auto* vrv = std::get_if<Equation::Variable>(&eq.right->value))
+						if(vrv)
 							if(vlv->name > vrv->name)
 								Return(Equation({eq.op,*vrv,*vlv}));// if other is var, check lex order
 						// if other is MULTIPLY, swap to have a left deep tree
 					}else
 						;// if both children are + or -, sort by variable, if both same var, sort by constant.
-					if (auto* v = std::get_if<double>(&eq.right->value)){
-						if(*v==0) Return(*eq.right);
-						if(*v==1) Return(*eq.left);
-					}else if(auto* vhmm = std::get_if<Equation::Variable>(&eq.left->value)){
+					if (vrn){
+						if(*vrn==0) Return(*eq.right);
+						if(*vrn==1) Return(*eq.left);
+					}else if(vrv){
 						// if other is var, check lex order
 						// if other is MULTIPLY, check lex of it's right child
 					}
 					break;
 				case Equation::Operator::DIVIDE:
 					//std::cerr<<"Debug: case DIVIDE"<<std::endl;
-					if (auto* v = std::get_if<double>(&eq.left->value)){
-						if(*v==0) Return(*eq.left); // TODO: Check if 0/0 or add a condition
-						//if(*v==1) ; TODO: 1/(1/x)=x
-						if (auto* v2 = std::get_if<double>(&eq.right->value))
-							Return(*v/ *v2); // Integer optimization
-					}if (auto* v = std::get_if<double>(&eq.right->value)){
-						// if(*v==0) ; TODO: Infinity(unsigned) (undef if 0/0, add a condition)
-						if(*v==1) Return(*eq.left);
+					if (vln){
+						if(*vln==0) Return(*eq.left); // TODO: Check if 0/0 or add a condition
+						//if(*vln==1) ; TODO: 1/(1/x)=x
+						if (vrn)
+							Return(*vln/ *vrn); // Integer optimization
+					}if (vrn){
+						// if(*vrn==0) ; TODO: Infinity(unsigned) (undef if 0/0, add a condition)
+						if(*vrn==1) Return(*eq.left);
 					}
 					break;
 					// TODO: Other operators.
@@ -103,7 +107,7 @@ bool simplify_inplace(Equation& e) {
 		},e.value);}
 
 Equation simplify(Equation e) {
-	// TODO: Loop until no changes?
+	// Loop until no changes
 	while(simplify_inplace(e));
 	return e;
 }
