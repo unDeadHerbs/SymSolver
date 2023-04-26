@@ -2,6 +2,7 @@
 #include <optional>
 #include <iostream> // for std::cerr
 #include <sstream>
+#include <type_traits>
 
 // Copied from cppreference, not sure why its not in the std namespace already.
 // This lets std::visit take a set of lambdas.
@@ -19,94 +20,90 @@ bool simplify_inplace(Equation& e) {
 			// than worst case or random case) and so the overhead of
 			// walking more "intelligently" will[fn::Citation Needed] cost
 			// more than it saves.
-			[](double){return false;},
-			[](Equation::Variable){return false;},
+
+			
+			#define Changed() return true
+			#define NoChange() return false
+			// The =tmp= variable is because of smart pointer dereferencing
+			// and the destructor being called in the assignment operation.
+			// TODO: use std::decay<decltype(e)> or something
+			#define Return(X) do{Equation tmp(X);e=tmp;Changed();}while(0)
+			
+			[](double){NoChange();},
+			[](Equation::Variable){NoChange();},
 			[&](Equation::Op_node& eq){
 				if(simplify_inplace(*eq.left))
-					return true;
+					Changed();
 				if(simplify_inplace(*eq.right))
-					return true;
-
+					Changed();
+				
 				switch(eq.op){
-					// The =tmp= variables are because of smart pointer dereferencing.
 				case Equation::Operator::ADD:
 					//std::cerr<<"Debug: case ADD"<<std::endl;
 					if (auto* v = std::get_if<double>(&eq.left->value))
-						if(*v==0){
-							auto tmp=*eq.right;
-							e=tmp;
-							return true;}
-						else if (auto* v2 = std::get_if<double>(&eq.right->value)){
-							e={*v+*v2}; // Integer optimization
-							return true;}
+						if(*v==0)
+							Return(*eq.right);
+						else if (auto* v2 = std::get_if<double>(&eq.right->value))
+							Return(*v+*v2); // Integer optimization
 					if (auto* v = std::get_if<double>(&eq.right->value))
-						if(*v==0){
-							auto tmp=*eq.left;
-							e=tmp;
-							return true;}
+						if(*v==0)
+							Return(*eq.left);
 						else
 							;// TODO: move integers before variables (sort by complexity)
 					break;
 				case Equation::Operator::SUBTRACT:
 					//std::cerr<<"Debug: case SUBTRACT"<<std::endl;
 					if (auto* v = std::get_if<double>(&eq.left->value))
-						if(*v==0){
-							eq={Equation::Operator::MULTIPLY,Equation(-1),*eq.right};return true;}
-						else
-							if (auto* v2 = std::get_if<double>(&eq.right->value)){
-								e={*v-*v2}; // Integer optimization
-								return true;}
+						if(*v==0) Return(Equation({Equation::Operator::MULTIPLY,Equation(-1),*eq.right}));
+						else if (auto* v2 = std::get_if<double>(&eq.right->value))
+							Return(*v-*v2); // Integer optimization
 					if (auto* v = std::get_if<double>(&eq.right->value))
-						if(*v==0){
-							auto tmp=*eq.left;
-							e=tmp;
-							return true;}
+						if(*v==0) Return(*eq.left);
+					break;
 				case Equation::Operator::MULTIPLY:
 					//std::cerr<<"Debug: case MULTIPLY"<<std::endl;
-					if (auto* v = std::get_if<double>(&eq.left->value)){
+					if (auto* v = std::get_if<double>(&eq.left->value)){// TODO: convert to a std::vist to fix shadowing problems
 						//std::cerr<<"Debug: left is v="<<v<<std::endl;
 						//std::cerr<<"Debug: left is *v="<<*v<<std::endl;
-						if((*v)==0){
-							auto tmp=*eq.left;
-							e=tmp;
-							return true;
-						}else if(*v==1){
-							auto tmp =*eq.right;
-							e=tmp;
-							return true;
-						}else
-							if (auto* v2 = std::get_if<double>(&eq.right->value)){
-								e={*v**v2}; // Integer optimization
-								return true;}
+						if((*v)==0) Return(*eq.left);
+						else if(*v==1) Return(*eq.right);
+						else
+							if (auto* v2 = std::get_if<double>(&eq.right->value))
+								Return(*v**v2); // Integer optimization
+					}else if(auto* vhmm = std::get_if<Equation::Variable>(&eq.left->value)){
+						// if other is number, swap order
+						// if other is var, check lex order
+						// if other is MULTIPLY, swap to have a left deep tree
 					}else
-						; // TODO: Sort Variables, convert to exponents, etc.
-					if (auto* v = std::get_if<double>(&eq.right->value))
-						if(*v==0){
-							auto tmp=*eq.right;
-							e=tmp;return true;}
-						else if(*v==1){
-							auto tmp=*eq.left;
-							e=tmp;return true;}
+						;// if both children are + or -, sort by variable, if both same var, sort by constant.
+					if (auto* v = std::get_if<double>(&eq.right->value)){
+						if(*v==0)
+							Return(*eq.right);
+						else if(*v==1)
+							Return(*eq.left);
+					}else if(auto* vhmm = std::get_if<Equation::Variable>(&eq.left->value)){
+						// if other is var, check lex order
+						// if other is MULTIPLY, check lex of it's right child
+					}
+					break;
 				case Equation::Operator::DIVIDE:
 					//std::cerr<<"Debug: case DIVIDE"<<std::endl;
 					if (auto* v = std::get_if<double>(&eq.left->value))
-						if(*v==0){
-							auto tmp=*eq.left;
-							e=tmp;return true;}
+						if(*v==0)
+							Return(*eq.left);
 						else if(*v==1)
 							;// TODO: 1/(1/x)=x
 						else
-							if (auto* v2 = std::get_if<double>(&eq.right->value)){
-								e={*v/ *v2}; // Integer optimization
-								return true;}
+							if (auto* v2 = std::get_if<double>(&eq.right->value))
+								Return(*v/ *v2); // Integer optimization
 					if (auto* v = std::get_if<double>(&eq.right->value))
-						if(*v==0) ;//{NAN;return true;}
-						else if(*v==1){
-							auto tmp=*eq.left;
-							e=tmp;return true;}
+						if(*v==0)
+							;//{NAN;return true;}
+						else if(*v==1)
+							Return(*eq.left);
 					// TODO: Other operators.
 				}
-				return false;
+				NoChange();
 			}
 		},e.value);}
 
