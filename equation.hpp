@@ -29,6 +29,7 @@ struct Equation {
 };
 
 int precedent(char op);
+bool commutative(Equation::Operator);
 void print(Equation e);
 
 #endif

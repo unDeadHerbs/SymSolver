@@ -33,44 +33,59 @@ bool simplify_inplace(Equation& e) {
 			[](double){NoChange();},
 			[](Equation::Variable){NoChange();},
 			[&](Equation::Op_node& eq){
+				// TODO: Instead of short cutting, loop.  This will save the
+				// stack frames from needing remaking and can be made smarter
+				// to only rework the modified sub-parts.  It'll also prevent
+				// rescanning the whole tree when a part near the end is
+				// changed.
 				if(simplify_inplace(*eq.left))
 					Changed();
 				if(simplify_inplace(*eq.right))
 					Changed();
 
 				#define Return_Swap() Return(Equation({op,*eq.right,*eq.left}))
+				using Equation::Operator::ADD;
+				using Equation::Operator::SUBTRACT;
+				using Equation::Operator::MULTIPLY;
+				using Equation::Operator::DIVIDE;
 
 				// TODO: Use pattern matching to resyntax this.
 				auto* vln = std::get_if<double>(&eq.left->value);
 				auto* vrn = std::get_if<double>(&eq.right->value);
 				auto* vlv = std::get_if<Equation::Variable>(&eq.left->value);
 				auto* vrv = std::get_if<Equation::Variable>(&eq.right->value);
+				auto* vle = std::get_if<Equation::Op_node>(&eq.left->value);
+				auto* vre = std::get_if<Equation::Op_node>(&eq.right->value);
 				auto op = eq.op;
-				using Equation::Operator::ADD;
-				using Equation::Operator::SUBTRACT;
-				using Equation::Operator::MULTIPLY;
-				using Equation::Operator::DIVIDE;
+
+				if(commutative(op) && vlv && vrn) Return_Swap();
+				if(commutative(op) && !vle && vre) Return_Swap();
+				if(commutative(op) && vlv && vrv && vlv->name > vrv->name) Return_Swap();
+				if(commutative(op) && vle && vrv && vle->op==op)
+					if(auto* vlerv = std::get_if<Equation::Variable>(&vle->right->value))
+						if(vlerv->name > vrv->name)
+							Return(Equation({op,Equation({op,*vle->left,*eq.right}),*vle->right}));
+				if(commutative(op) && vle && vrn && vle->op==op)
+					if(!std::get_if<double>(&vle->right->value))
+							Return(Equation({op,Equation({op,*vle->left,*eq.right}),*vle->right}));
 				switch(op){
 				case ADD:
 					//std::cerr<<"Debug: case ADD"<<std::endl;
 					if(vln && *vln==0) Return(*eq.right);
 					if(vrn && *vrn==0) Return(*eq.left);
 					if(vln && vrn) Return(*vln+*vrn);
-					;// TODO: move integers before variables (sort by complexity)
 					break;
 				case SUBTRACT:
 					//std::cerr<<"Debug: case SUBTRACT"<<std::endl;
 					if(vln && *vln==0) Return(Equation({MULTIPLY,Equation(-1),*eq.right}));
 					if(vrn && *vrn==0) Return(*eq.left);
-					if(vln && vrn) Return(*vln-*vrn); // Integer optimization
+					if(vln && vrn) Return(*vln-*vrn);
 					break;
 				case MULTIPLY:
 					//std::cerr<<"Debug: case MULTIPLY"<<std::endl;
 					if(vln && *vln==0) Return(*vln);
 					if(vln && *vln==1) Return(*eq.right);
 					if(vln && vrn) Return(*vln**vrn);
-					if(vlv && vrn) Return_Swap();
-					if(vlv && vrv && vlv->name > vrv->name) Return_Swap();
 					// if(vlv && vre) Return_Swap();
 					// if(vle && vre) if both children are + or -, sort by variable, if both same var, sort by constant.
 					if(vrn && *vrn==0) Return(*eq.right);

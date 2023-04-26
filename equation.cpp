@@ -67,6 +67,14 @@ int precedent(Equation::Operator op){
 		return 2;
 	}}
 
+bool commutative(Equation::Operator op){
+	switch(op){
+	case Equation::Operator::ADD: case Equation::Operator::MULTIPLY:
+		return true;
+	case Equation::Operator::SUBTRACT: case Equation::Operator::DIVIDE:
+		return false;
+	}}
+
 bool right_binding(Equation::Operator op){
 	switch(op){
 	case Equation::Operator::ADD: case Equation::Operator::MULTIPLY:
