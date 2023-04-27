@@ -75,16 +75,14 @@ bool simplify_inplace(Equation& e) {
 				auto* vln = std::get_if<double>(&eq.left->value);
 				auto* vrn = std::get_if<double>(&eq.right->value);
 				//auto* vlv = std::get_if<Equation::Variable>(&eq.left->value);
-				auto* vrv = std::get_if<Equation::Variable>(&eq.right->value);
+				//auto* vrv = std::get_if<Equation::Variable>(&eq.right->value);
 				auto* vle = std::get_if<Equation::Op_node>(&eq.left->value);
 				//auto* vre = std::get_if<Equation::Op_node>(&eq.right->value);
 				auto op = eq.op;
 
 				if(commutative(op) && greater_than(*eq.left,*eq.right)) Return_Swap();
-				if(commutative(op) && vle && vrv && vle->op==op)
-					if(auto* vlerv = std::get_if<Equation::Variable>(&vle->right->value))
-						if(vlerv->name > vrv->name)
-							Return(Equation({op,Equation({op,*vle->left,*eq.right}),*vle->right}));
+				if(commutative(op) && vle && vle->op==op && greater_than(*vle->right,*eq.right))
+					Return(Equation({op,Equation({op,*vle->left,*eq.right}),*vle->right}));
 				if(commutative(op) && vle && vrn && vle->op==op)
 					if(!std::get_if<double>(&vle->right->value))
 							Return(Equation({op,Equation({op,*vle->left,*eq.right}),*vle->right}));
