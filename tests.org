@@ -384,3 +384,62 @@ Simple arithmetic can be removed.
 #+BEGIN_SRC scheme :tangle tests.d/00001018-simplifyer-arithmetic_7.output
 -1*x
 #+END_SRC
+** Lexicographic Sorting
+Sort sum terms in decreasing degree, sort product terms in increasing
+order of variable name.
+*** 00001019 Lexicographic Variables Order 1
+#+BEGIN_SRC scheme :tangle tests.d/00001019-simplifyer-lex_var_1.input
+x*3
+#+END_SRC
+#+BEGIN_SRC scheme :tangle tests.d/00001019-simplifyer-lex_var_1.output
+3*x
+#+END_SRC
+*** 00001020 Lexicographic Variables Order 2
+#+BEGIN_SRC scheme :tangle tests.d/00001020-simplifyer-lex_var_2.input
+y*x
+#+END_SRC
+#+BEGIN_SRC scheme :tangle tests.d/00001020-simplifyer-lex_var_2.output
+x*y
+#+END_SRC
+*** 00001021 Lexicographic Variables Order 3
+#+BEGIN_SRC scheme :tangle tests.d/00001021-simplifyer-lex_var_3.input
+x+2
+#+END_SRC
+#+BEGIN_SRC scheme :tangle tests.d/00001021-simplifyer-lex_var_3.output
+2+x
+#+END_SRC
+*** 00001022 Lexicographic Variables Order 4
+#+BEGIN_SRC scheme :tangle tests.d/00001022-simplifyer-lex_var_4.input
+y*x*2
+#+END_SRC
+#+BEGIN_SRC scheme :tangle tests.d/00001022-simplifyer-lex_var_4.output
+2*x*y
+#+END_SRC
+*** 00001023 Lexicographic Variables Order 5
+#+BEGIN_SRC scheme :tangle tests.d/00001023-simplifyer-lex_var_5.input
+y+x+2
+#+END_SRC
+#+BEGIN_SRC scheme :tangle tests.d/00001023-simplifyer-lex_var_5.output
+2+x+y
+#+END_SRC
+*** 00001024 Lexicographic Variables Order 6
+#+BEGIN_SRC scheme :tangle tests.d/00001024-simplifyer-lex_var_6.input
+y*x+x*2
+#+END_SRC
+#+BEGIN_SRC scheme :tangle tests.d/00001024-simplifyer-lex_var_6.output
+2*x+x*y
+#+END_SRC
+*** 00001025 Lexicographic Variables Order 7
+#+BEGIN_SRC scheme :tangle tests.d/00001025-simplifyer-lex_var_7.input
+(y+x)*(x+2)
+#+END_SRC
+#+BEGIN_SRC scheme :tangle tests.d/00001025-simplifyer-lex_var_7.output
+(2+x)*(x+y)
+#+END_SRC
+*** 00001026 Lexicographic Variables Order 7
+#+BEGIN_SRC scheme :tangle tests.d/00001026-simplifyer-lex_var_7.input
+(x+4)(x+3)(x+2)(x+1)
+#+END_SRC
+#+BEGIN_SRC scheme :tangle tests.d/00001026-simplifyer-lex_var_7.output
+(1+x)*(2+x)*(3+x)*(4+x)
+#+END_SRC

@@ -83,9 +83,6 @@ bool simplify_inplace(Equation& e) {
 				if(commutative(op) && greater_than(*eq.left,*eq.right)) Return_Swap();
 				if(commutative(op) && vle && vle->op==op && greater_than(*vle->right,*eq.right))
 					Return(Equation({op,Equation({op,*vle->left,*eq.right}),*vle->right}));
-				if(commutative(op) && vle && vrn && vle->op==op)
-					if(!std::get_if<double>(&vle->right->value))
-							Return(Equation({op,Equation({op,*vle->left,*eq.right}),*vle->right}));
 				switch(op){
 				case ADD:
 					//std::cerr<<"Debug: case ADD"<<std::endl;
