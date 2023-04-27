@@ -83,32 +83,33 @@ bool right_binding(Equation::Operator op){
 		return true;
 	}}
 
-
-void print(Equation e) {
+std::ostream& operator<<(std::ostream& o,Equation const& rhs){
 	std::visit(overloaded{
-			[](double val){std::cout << val;},
-			[](Equation::Variable var){std::cout << var.name;},
-			[](Equation::Op_node const& eq){
+			[&](double val){o << val;},
+			[&](Equation::Variable var){o << var.name;},
+			[&](Equation::Op_node const& eq){
 				auto prec = precedent(eq.op);
 
 				bool add_parentheses = false;
 				if (auto* eqq=std::get_if<Equation::Op_node>(&eq.left->value))
 					add_parentheses = precedent(eqq->op)<prec;
         if (add_parentheses)
-					std::cout << '(';
-        print(*eq.left);
+					o << '(';
+        o<<*eq.left;
         if (add_parentheses)
-					std::cout << ')';
+					o << ')';
 				
-				std::cout << Equation::to_sym(eq.op);
+				o << Equation::to_sym(eq.op);
 				
         add_parentheses = false;
 				if (auto* eqq=std::get_if<Equation::Op_node>(&eq.right->value))
 					add_parentheses = precedent(eqq->op)<prec || (precedent(eqq->op)==prec && right_binding(eq.op));
         if (add_parentheses)
-					std::cout << '(';
-        print(*eq.right);
+					o << '(';
+        o<< *eq.right;
         if (add_parentheses)
-					std::cout << ')';
+					o << ')';
 			}
-		},e.value);}
+		},rhs.value);
+	return o;
+}

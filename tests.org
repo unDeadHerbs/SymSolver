@@ -436,10 +436,10 @@ y*x+x*2
 #+BEGIN_SRC scheme :tangle tests.d/00001025-simplifyer-lex_var_7.output
 (2+x)*(x+y)
 #+END_SRC
-*** 00001026 Lexicographic Variables Order 7
-#+BEGIN_SRC scheme :tangle tests.d/00001026-simplifyer-lex_var_7.input
-(x+4)(x+3)(x+2)(x+1)
+*** 00001026 Lexicographic Variables Order 8
+#+BEGIN_SRC scheme :tangle tests.d/00001026-simplifyer-lex_var_8.input
+0+(x+4)(x+y+0)(1*x+2)(x+-1*1)(0*x+4+7+y)(x+3-3)
 #+END_SRC
-#+BEGIN_SRC scheme :tangle tests.d/00001026-simplifyer-lex_var_7.output
-(1+x)*(2+x)*(3+x)*(4+x)
+#+BEGIN_SRC scheme :tangle tests.d/00001026-simplifyer-lex_var_8.output
+x*(-1+x)*(2+x)*(4+x)*(11+y)*(x+y)
 #+END_SRC

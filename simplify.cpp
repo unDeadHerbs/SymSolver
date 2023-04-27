@@ -4,6 +4,13 @@
 #include <sstream>
 #include <type_traits>
 
+#define DEBUG 1
+#ifdef DEBUG
+#define DB(X) do{std::cerr<<X<<std::endl;}while(0)
+#else
+#define DB(X) do{}while(0)
+#endif
+
 // Copied from cppreference, not sure why its not in the std namespace already.
 // This lets std::visit take a set of lambdas.
 template<class... Ts>
@@ -15,7 +22,8 @@ overloaded(Ts...) -> overloaded<Ts...>;
 bool greater_than(Equation const& l,Equation const& r){
 	// TODO: This "should" return invalid if the operators don't match;
 	// but, I'll return false for now as the only use of this is in
-	// swapping elements.
+	// swapping elements.  Another option is choosing "lower" operators
+	// first.  If this is ordering by "complexity".
 	auto* vln = std::get_if<double>(&l.value);
 	auto* vrn = std::get_if<double>(&r.value);
 	auto* vlv = std::get_if<Equation::Variable>(&l.value);
@@ -23,14 +31,16 @@ bool greater_than(Equation const& l,Equation const& r){
 	auto* vle = std::get_if<Equation::Op_node>(&l.value);
 	auto* vre = std::get_if<Equation::Op_node>(&r.value);
 	if(vln && vrn) return *vln > *vrn;
-	if(vln) return false;
-	if(vrn) return true;
+	if(vln && !vrn) return false;
+	if(!vln && vrn) return true;
 	if(vlv && vrv) return vlv->name > vrv->name;
-	if(vlv) return false;
-	if(vrv) return true;
+	if(vlv && !vrv) return false;
+	if(!vlv && vrv) return true;
 	if(vle->op != vre->op) return false; // TODO: See above.
 	if(greater_than(*vle->left,*vre->left)) return true;
-	return greater_than(*vle->right,*vre->right);
+	if(not greater_than(*vre->left,*vle->left)) // Since I don't have an == operator here.
+		return greater_than(*vle->right,*vre->right);
+	return false;
 }
 
 bool simplify_inplace(Equation& e) {
@@ -42,15 +52,14 @@ bool simplify_inplace(Equation& e) {
 			// than worst case or random case) and so the overhead of
 			// walking more "intelligently" will[fn::Citation Needed] cost
 			// more than it saves.
-
 			
 			#define Changed() return true
-			#define NoChange() return false
+			#define NoChange() do{return false;}while(0)
 			// The =tmp= variable is because of smart pointer dereferencing
 			// and the destructor being called in the assignment operation.
 			// TODO: use std::decay<decltype(e)> or something
 			// TODO: Sometimes the argument needs casting pre-call.  Why?
-			#define Return(X) do{Equation tmp(X);e=tmp;Changed();}while(0)
+			#define Return(MSG,X) do{DB("Change: "<<MSG);Equation tmp(X);e=tmp;Changed();}while(0)
 			
 			[](double){NoChange();},
 			[](Equation::Variable){NoChange();},
@@ -65,7 +74,9 @@ bool simplify_inplace(Equation& e) {
 				if(simplify_inplace(*eq.right))
 					Changed();
 
-				#define Return_Swap() Return(Equation({op,*eq.right,*eq.left}))
+				DB(e);
+
+				#define Return_Swap() Return("LR Swap",Equation({op,*eq.right,*eq.left}))
 				using Equation::Operator::ADD;
 				using Equation::Operator::SUBTRACT;
 				using Equation::Operator::MULTIPLY;
@@ -77,43 +88,48 @@ bool simplify_inplace(Equation& e) {
 				//auto* vlv = std::get_if<Equation::Variable>(&eq.left->value);
 				//auto* vrv = std::get_if<Equation::Variable>(&eq.right->value);
 				auto* vle = std::get_if<Equation::Op_node>(&eq.left->value);
-				//auto* vre = std::get_if<Equation::Op_node>(&eq.right->value);
+				auto* vre = std::get_if<Equation::Op_node>(&eq.right->value);
+				decltype(vln) vrln;
+				if(vre) vrln = std::get_if<double>(&vre->left->value);
 				auto op = eq.op;
 
+				//if(commutative(op) && vle && vle->op==op && greater_than(*vle->right,*eq.right))
+				//	Return("LRwR Swap",Equation({op,Equation({op,*vle->left,*eq.right}),*vle->right}));
 				if(commutative(op) && greater_than(*eq.left,*eq.right)) Return_Swap();
-				if(commutative(op) && vle && vle->op==op && greater_than(*vle->right,*eq.right))
-					Return(Equation({op,Equation({op,*vle->left,*eq.right}),*vle->right}));
+				if(commutative(op) && vre && vre->op==op && greater_than(*eq.left,*vre->left))
+					Return("LwRL Swap",Equation({op,*vre->left,Equation({op,*eq.left,*vre->right})}));
+
+				// TODO: Give operators a sort order.  Remove this patch
+				if(commutative(op) && vle && vle->op==op && vre && vre->op!=op)
+					Return_Swap();
+
 				switch(op){
 				case ADD:
-					//std::cerr<<"Debug: case ADD"<<std::endl;
-					if(vln && *vln==0) Return(*eq.right);
-					if(vrn && *vrn==0) Return(*eq.left);
-					if(vln && vrn) Return(*vln+*vrn);
+					if(vln && *vln==0) Return("Left 0 Addition",*eq.right);
+					if(vrn && *vrn==0) Return("Right 0 Addition",*eq.left);
+					if(vln && vrn) Return("Constant Addition",*vln+*vrn);
+					if(vln && vre && vrln) Return("Constant Addition 2",Equation({op,*vln+*vrln,*vre->right}));
 					break;
 				case SUBTRACT:
-					//std::cerr<<"Debug: case SUBTRACT"<<std::endl;
-					if(vln && *vln==0) Return(Equation({MULTIPLY,Equation(-1),*eq.right}));
-					if(vrn && *vrn==0) Return(*eq.left);
-					if(vln && vrn) Return(*vln-*vrn);
+					if(vln && *vln==0) Return("Left 0 Subtraction",Equation({MULTIPLY,Equation(-1),*eq.right}));
+					if(vrn && *vrn==0) Return("Right 0 Subtraction",*eq.left);
+					if(vln && vrn) Return("Constant Subtraction",*vln-*vrn);
+					if(!vln && vrn) Return("Subtract Constant Add Inverse",Equation({ADD,*eq.left,{-1**vrn}}));
 					break;
 				case MULTIPLY:
-					//std::cerr<<"Debug: case MULTIPLY"<<std::endl;
-					if(vln && *vln==0) Return(*vln);
-					if(vln && *vln==1) Return(*eq.right);
-					if(vln && vrn) Return(*vln**vrn);
-					// if(vlv && vre) Return_Swap();
-					// if(vle && vre) if both children are + or -, sort by variable, if both same var, sort by constant.
-					if(vrn && *vrn==0) Return(*eq.right);
-					if(vrn && *vrn==1) Return(*eq.left);
+					if(vln && *vln==0) Return("Left 0 Multiplication",*vln);
+					if(vln && *vln==1) Return("Left 1 Multiplication",*eq.right);
+					if(vln && vrn) Return("Constant Multiplication",*vln**vrn);
+					if(vrn && *vrn==0) Return("Right 0 Multiplication",*eq.right);
+					if(vrn && *vrn==1) Return("Right 1 Multiplication",*eq.left);
 					// if(vle && vrv) check lex of it's right child
 					break;
 				case DIVIDE:
-					//std::cerr<<"Debug: case DIVIDE"<<std::endl;
-					if(vln && *vln==0) Return(*eq.left); // TODO: Check if 0/0 or add a condition
+					if(vln && *vln==0) Return("Left 0 Division",*eq.left); // TODO: Check if 0/0 or add a condition
+					if(vrn && *vrn==1) Return("Right 1 Division",*eq.left);
 					//if(vln && *vln==1) ; TODO: 1/(1/x)=x
-					if (vln && vrn) Return(*vln/ *vrn); // Integer optimization
+					if (vln && vrn) Return("Constant Division",*vln/ *vrn);
 					// if(vrn && *vrn==0) ; TODO: Infinity(unsigned) (undef if 0/0, add a condition)
-					if(vrn && *vrn==1) Return(*eq.left);
 					break;
 				}
 				NoChange();

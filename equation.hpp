@@ -30,6 +30,6 @@ struct Equation {
 
 int precedent(char op);
 bool commutative(Equation::Operator);
-void print(Equation e);
+std::ostream& operator<<(std::ostream& o,Equation const& rhs);
 
 #endif

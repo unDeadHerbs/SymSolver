@@ -23,8 +23,7 @@ int main(int argc, char** argv){
 		std::string formula;
 		std::getline(file,formula);
 		Equation eq= parse_formula(formula);
-		print(eq);
-		std::cout<<std::endl;
+		std::cout<<eq<<std::endl;
 	}catch(const char* e){
 		std::cerr<<"[ERROR] Caught unhandled Exception: \""<<e<<"\""<<std::endl;
 	}

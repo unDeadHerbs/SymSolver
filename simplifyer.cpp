@@ -24,8 +24,7 @@ int main(int argc, char** argv){
 	std::getline(file,formula);
 	Equation eq= parse_formula(formula);
 	eq=simplify(eq);
-	print(eq);
-	std::cout<<std::endl;
+	std::cout<<eq<<std::endl;
 
 	return 0;
 }
