@@ -11,6 +11,28 @@ struct overloaded : Ts... { using Ts::operator()...; };
 template<class... Ts>
 overloaded(Ts...) -> overloaded<Ts...>;
 
+// TODO: Make this a spaceship?
+bool greater_than(Equation const& l,Equation const& r){
+	// TODO: This "should" return invalid if the operators don't match;
+	// but, I'll return false for now as the only use of this is in
+	// swapping elements.
+	auto* vln = std::get_if<double>(&l.value);
+	auto* vrn = std::get_if<double>(&r.value);
+	auto* vlv = std::get_if<Equation::Variable>(&l.value);
+	auto* vrv = std::get_if<Equation::Variable>(&r.value);
+	auto* vle = std::get_if<Equation::Op_node>(&l.value);
+	auto* vre = std::get_if<Equation::Op_node>(&r.value);
+	if(vln && vrn) return *vln > *vrn;
+	if(vln) return false;
+	if(vrn) return true;
+	if(vlv && vrv) return vlv->name > vrv->name;
+	if(vlv) return false;
+	if(vrv) return true;
+	if(vle->op != vre->op) return false; // TODO: See above.
+	if(greater_than(*vle->left,*vre->left)) return true;
+	return greater_than(*vle->right,*vre->right);
+}
+
 bool simplify_inplace(Equation& e) {
 	return std::visit(overloaded{
 			// There are a lot of efficiency gains to be made by walking the
@@ -52,15 +74,13 @@ bool simplify_inplace(Equation& e) {
 				// TODO: Use pattern matching to resyntax this.
 				auto* vln = std::get_if<double>(&eq.left->value);
 				auto* vrn = std::get_if<double>(&eq.right->value);
-				auto* vlv = std::get_if<Equation::Variable>(&eq.left->value);
+				//auto* vlv = std::get_if<Equation::Variable>(&eq.left->value);
 				auto* vrv = std::get_if<Equation::Variable>(&eq.right->value);
 				auto* vle = std::get_if<Equation::Op_node>(&eq.left->value);
-				auto* vre = std::get_if<Equation::Op_node>(&eq.right->value);
+				//auto* vre = std::get_if<Equation::Op_node>(&eq.right->value);
 				auto op = eq.op;
 
-				if(commutative(op) && vlv && vrn) Return_Swap();
-				if(commutative(op) && !vle && vre) Return_Swap();
-				if(commutative(op) && vlv && vrv && vlv->name > vrv->name) Return_Swap();
+				if(commutative(op) && greater_than(*eq.left,*eq.right)) Return_Swap();
 				if(commutative(op) && vle && vrv && vle->op==op)
 					if(auto* vlerv = std::get_if<Equation::Variable>(&vle->right->value))
 						if(vlerv->name > vrv->name)
