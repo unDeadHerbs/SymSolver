@@ -4,7 +4,7 @@
 #include <sstream>
 #include <type_traits>
 
-#define DEBUG 1
+//#define DEBUG 1
 #ifdef DEBUG
 #define DB(X) do{std::cerr<<X<<std::endl;}while(0)
 #else
@@ -36,7 +36,7 @@ bool greater_than(Equation const& l,Equation const& r){
 	if(vlv && vrv) return vlv->name > vrv->name;
 	if(vlv && !vrv) return false;
 	if(!vlv && vrv) return true;
-	if(vle->op != vre->op) return false; // TODO: See above.
+	if(vle->op != vre->op) return precedent(vle->op)>precedent(vre->op);
 	if(greater_than(*vle->left,*vre->left)) return true;
 	if(not greater_than(*vre->left,*vle->left)) // Since I don't have an == operator here.
 		return greater_than(*vle->right,*vre->right);
@@ -87,7 +87,7 @@ bool simplify_inplace(Equation& e) {
 				auto* vrn = std::get_if<double>(&eq.right->value);
 				//auto* vlv = std::get_if<Equation::Variable>(&eq.left->value);
 				//auto* vrv = std::get_if<Equation::Variable>(&eq.right->value);
-				auto* vle = std::get_if<Equation::Op_node>(&eq.left->value);
+				//auto* vle = std::get_if<Equation::Op_node>(&eq.left->value);
 				auto* vre = std::get_if<Equation::Op_node>(&eq.right->value);
 				decltype(vln) vrln;
 				if(vre) vrln = std::get_if<double>(&vre->left->value);
@@ -98,10 +98,6 @@ bool simplify_inplace(Equation& e) {
 				if(commutative(op) && greater_than(*eq.left,*eq.right)) Return_Swap();
 				if(commutative(op) && vre && vre->op==op && greater_than(*eq.left,*vre->left))
 					Return("LwRL Swap",Equation({op,*vre->left,Equation({op,*eq.left,*vre->right})}));
-
-				// TODO: Give operators a sort order.  Remove this patch
-				if(commutative(op) && vle && vle->op==op && vre && vre->op!=op)
-					Return_Swap();
 
 				switch(op){
 				case ADD:

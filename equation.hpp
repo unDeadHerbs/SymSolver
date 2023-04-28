@@ -28,7 +28,7 @@ struct Equation {
 	Equation(Variable v):value(v){};
 };
 
-int precedent(char op);
+int precedent(Equation::Operator op);
 bool commutative(Equation::Operator);
 std::ostream& operator<<(std::ostream& o,Equation const& rhs);
 
