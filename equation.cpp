@@ -87,6 +87,15 @@ std::ostream& operator<<(std::ostream& o,Equation const& rhs){
 	std::visit(overloaded{
 			[&](double val){o << val;},
 			[&](Equation::Variable var){o << var.name;},
+			[&](Equation::F_node const& f){
+				o << f.function;
+				if(f.subscripts.size())
+					o<<"_"<<f.subscripts[0];// TODO: maybe add {}s?
+				if(f.customizations.size())
+					o<<'['<<f.customizations[0]<<']';
+				if(f.arguments.size())
+					o<<'{'<<f.arguments[0]<<'}';
+			},
 			[&](Equation::Op_node const& eq){
 				auto prec = precedent(eq.op);
 

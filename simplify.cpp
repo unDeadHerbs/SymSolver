@@ -123,11 +123,14 @@ bool simplify_inplace(Equation& e) {
 				case DIVIDE:
 					if(vln && *vln==0) Return("Left 0 Division",*eq.left); // TODO: Check if 0/0 or add a condition
 					if(vrn && *vrn==1) Return("Right 1 Division",*eq.left);
-					//if(vln && *vln==1) ; TODO: 1/(1/x)=x
+					//if(vln && *vln==1 && vre && vre->op==op && vre->left==1) Return("Double Division",vre->right);
 					if (vln && vrn) Return("Constant Division",*vln/ *vrn);
 					// if(vrn && *vrn==0) ; TODO: Infinity(unsigned) (undef if 0/0, add a condition)
 					break;
 				}
+				NoChange();
+			},
+			[&](Equation::F_node const&){
 				NoChange();
 			}
 		},e.value);}

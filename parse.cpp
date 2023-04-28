@@ -70,13 +70,50 @@ auto parse_variable(string const& formula,size_t head)
 	}else return {};
 }
 
-auto parse_parenthetical(string const& formula,size_t head)
+auto parse_parenthetical(string const& formula,size_t head,char open, char close)
 	->std::optional<std::pair<Equation,size_t>>;
 
 auto parse_term(string const& formula,size_t head,bool allow_leading_unary)
+	->std::optional<std::pair<Equation,size_t>>;
+
+auto parse_named_operator(string const& formula,size_t head)
 	->std::optional<std::pair<Equation,size_t>>{
-	// parenthesized | number | variable
-	if(auto par=parse_parenthetical(formula,head))
+	// starts with \sqrt
+	// parse { exp }
+	if(formula.substr(head).starts_with("\\sqrt")){
+		auto h=head+5;
+		if(auto tmplte=parse_parenthetical(formula,h,'[',']')){
+			auto [t,h2]=*tmplte;
+			if(auto body=parse_parenthetical(formula,h2,'{','}')){
+				auto [b,h3] = *body;
+				return {{{Equation::F_node({"\\sqrt",{t},{b}})},h3}};}}
+		if(auto body=parse_parenthetical(formula,h,'{','}')){
+			auto [b,h2] = *body;
+			return {{{Equation::F_node({"\\sqrt",{b}})},h2}};}}
+	if(formula.substr(head).starts_with("\\ln")){
+		auto h=head+3;
+		if(auto body=parse_parenthetical(formula,h,'{','}')){
+			auto [b,h2] = *body;
+			return {{{Equation::F_node({"\\ln",{b}})},h2}};}}
+	if(formula.substr(head).starts_with("\\log")){
+		auto h=head+4;
+		if(h<formula.size() && formula[h]=='_'){
+			auto h2=h+1;
+			if(auto base=parse_term(formula,h2,false)){
+				auto [bs,h3]=*base;
+				if(auto body=parse_parenthetical(formula,h3,'{','}')){
+					auto [b,h4] = *body;
+					return {{{Equation::F_node({{{bs},{}},"\\log",{b}})},h4}};}}}
+		if(auto body=parse_parenthetical(formula,h,'{','}')){
+			auto [b,h2] = *body;
+			return {{{Equation::F_node({"\\log",{b}})},h2}};}}
+	return {};
+}
+
+auto parse_term(string const& formula,size_t head,bool allow_leading_unary)
+	->std::optional<std::pair<Equation,size_t>>{
+	// parenthesized | number | variable | named_operator
+	if(auto par=parse_parenthetical(formula,head,'(',')'))
 		return par;
 	if(auto num=parse_number(formula,head,allow_leading_unary)){
 		auto [n,h]=*num;
@@ -84,6 +121,8 @@ auto parse_term(string const& formula,size_t head,bool allow_leading_unary)
 	}
 	if(auto var=parse_variable(formula,head))
 		return var;
+	if(auto func=parse_named_operator(formula,head))
+		return func;
 	return {};
 }
 
@@ -149,16 +188,16 @@ auto parse_exp(string const& formula,size_t head)
 	return parse_sum(formula,head,true); // good enough for now
 }
 
-auto parse_parenthetical(string const& formula,size_t head)
+auto parse_parenthetical(string const& formula,size_t head,char open, char close)
 	->std::optional<std::pair<Equation,size_t>>{
-	// '('+expression+')'
+	// 'open+expression+'close
 	if(head>=formula.size()) return {};
-	if(formula[head++]!='(') return {};
+	if(formula[head++]!=open) return {};
 	if(auto eq=parse_exp(formula,head)){
 		auto [e,h]=*eq;
 		head=h;
 		if(head>=formula.size()) return {};
-		if(formula[head++]!=')') return {};
+		if(formula[head++]!=close) return {};
 		return {{e,head}};
 	}else return {};
 }

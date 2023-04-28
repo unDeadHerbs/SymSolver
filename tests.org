@@ -443,3 +443,34 @@ y*x+x*2
 #+BEGIN_SRC scheme :tangle tests.d/00001026-simplifyer-lex_var_8.output
 x*(-1+x)*(2+x)*(4+x)*(11+y)*(x+y)
 #+END_SRC
+* Parser Tests - Part 2
+Parse some simple named functions and constants:
+** Common Operators
+*** 00002001 Square Root
+#+BEGIN_SRC scheme :tangle tests.d/00002001-parser-square_root.input
+\sqrt{3}
+#+END_SRC
+#+BEGIN_SRC scheme :tangle tests.d/00002001-parser-square_root.output
+\sqrt{3}
+#+END_SRC
+*** 00002002 Natural Log
+#+BEGIN_SRC scheme :tangle tests.d/00002002-parser-ln.input
+\ln{3}
+#+END_SRC
+#+BEGIN_SRC scheme :tangle tests.d/00002002-parser-ln.output
+\ln{3}
+#+END_SRC
+*** 00002003 N-Root
+#+BEGIN_SRC scheme :tangle tests.d/00002003-parser-n_root.input
+\sqrt[4]{3}
+#+END_SRC
+#+BEGIN_SRC scheme :tangle tests.d/00002003-parser-n_root.output
+\sqrt[4]{3}
+#+END_SRC
+*** 00002004 Logarithm
+#+BEGIN_SRC scheme :tangle tests.d/00002004-parser-log.input
+\log_4{3}
+#+END_SRC
+#+BEGIN_SRC scheme :tangle tests.d/00002004-parser-log.output
+\log_4{3}
+#+END_SRC
