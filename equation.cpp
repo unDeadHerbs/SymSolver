@@ -89,8 +89,17 @@ std::ostream& operator<<(std::ostream& o,Equation const& rhs){
 			[&](Equation::Variable var){o << var.name;},
 			[&](Equation::F_node const& f){
 				o << f.function;
-				if(f.subscripts.size())
-					o<<"_"<<f.subscripts[0];// TODO: maybe add {}s?
+				if(f.subscripts.size()){
+					auto parens=false;
+					if(auto eqq=std::get_if<Equation::Op_node>(&f.subscripts[0].value))
+						parens=true;
+					o<<"_";
+					if(parens)
+						o<<"(";
+					o <<f.subscripts[0];// TODO: maybe add {}s?
+					if(parens)
+						o<<")";
+				}
 				if(f.customizations.size())
 					o<<'['<<f.customizations[0]<<']';
 				if(f.arguments.size())
