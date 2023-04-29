@@ -516,3 +516,45 @@ Parse some simple named functions and constants:
 #+BEGIN_SRC scheme :tangle tests.d/00002010-parser-log_2.output
 \log_(4/2){3}
 #+END_SRC
+*** 00002011 Exponential Operator
+#+BEGIN_SRC scheme :tangle tests.d/00002011-parser-pow.input
+2^3
+#+END_SRC
+#+BEGIN_SRC scheme :tangle tests.d/00002011-parser-pow.output
+2^3
+#+END_SRC
+*** 00002012 Exponential Operator 2 - Nesting
+#+BEGIN_SRC scheme :tangle tests.d/00002012-parser-pow_2.input
+2^3^4
+#+END_SRC
+#+BEGIN_SRC scheme :tangle tests.d/00002012-parser-pow_2.output
+2^3^4
+#+END_SRC
+*** 00002013 Exponential Operator 3 - Unneeded Parenthesis
+#+BEGIN_SRC scheme :tangle tests.d/00002013-parser-pow_3.input
+2^(3^4)
+#+END_SRC
+#+BEGIN_SRC scheme :tangle tests.d/00002013-parser-pow_3.output
+2^3^4
+#+END_SRC
+*** 00002014 Exponential Operator 4 - Negatives
+#+BEGIN_SRC scheme :tangle tests.d/00002014-parser-pow_4.input
+-3^4
+#+END_SRC
+#+BEGIN_SRC scheme :tangle tests.d/00002014-parser-pow_4.output
+-3^4
+#+END_SRC
+*** 00002015 Exponential Operator 5 - Negatives
+#+BEGIN_SRC scheme :tangle tests.d/00002015-parser-pow_5.input
+3^-4
+#+END_SRC
+#+BEGIN_SRC scheme :tangle tests.d/00002015-parser-pow_5.output
+3^-4
+#+END_SRC
+*** 00002016 Exponential Operator 6 - Subtraction
+#+BEGIN_SRC scheme :tangle tests.d/00002016-parser-pow_6.input
+2-3^4
+#+END_SRC
+#+BEGIN_SRC scheme :tangle tests.d/00002016-parser-pow_6.output
+2-3^4
+#+END_SRC

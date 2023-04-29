@@ -16,6 +16,7 @@ Equation::Operator constexpr Equation::to_Operator(char const c){
 	case '-': return Operator::SUBTRACT;
 	case '*': return Operator::MULTIPLY;
 	case '/': return Operator::DIVIDE;
+	case '^': return Operator::EXPONENT;
 	default: throw "Invalid Operator"; // TODO: That's not very constexper of you.
 	}
 }
@@ -26,6 +27,7 @@ char constexpr Equation::to_sym(Operator const op){
 	case Operator::SUBTRACT: return '-';
 	case Operator::MULTIPLY: return '*';
 	case Operator::DIVIDE: return '/';
+	case Operator::EXPONENT: return '^';
 	}
 }
 
@@ -65,21 +67,32 @@ int precedent(Equation::Operator op){
 		return 1;
 	case Equation::Operator::MULTIPLY: case Equation::Operator::DIVIDE:
 		return 2;
+	case Equation::Operator::EXPONENT:
+		return 3;
 	}}
 
 bool commutative(Equation::Operator op){
 	switch(op){
-	case Equation::Operator::ADD: case Equation::Operator::MULTIPLY:
+	case Equation::Operator::ADD:
+	case Equation::Operator::MULTIPLY:
 		return true;
-	case Equation::Operator::SUBTRACT: case Equation::Operator::DIVIDE:
+	case Equation::Operator::SUBTRACT:
+	case Equation::Operator::DIVIDE:
+	case Equation::Operator::EXPONENT:
 		return false;
 	}}
 
 bool right_binding(Equation::Operator op){
+	// If this operator binds to it's right argument more strongly than
+	// it's left, then `a/(b/c)` needs parenthesizes to not be
+	// misinterpreted.
 	switch(op){
-	case Equation::Operator::ADD: case Equation::Operator::MULTIPLY:
+	case Equation::Operator::ADD:
+	case Equation::Operator::MULTIPLY:
+	case Equation::Operator::EXPONENT:
 		return false;
-	 case Equation::Operator::SUBTRACT: case Equation::Operator::DIVIDE:
+	case Equation::Operator::SUBTRACT:
+	case Equation::Operator::DIVIDE:
 		return true;
 	}}
 

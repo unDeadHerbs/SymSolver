@@ -10,7 +10,7 @@ struct Equation {
 	struct Variable{
 		std::string name;
 	};
-	enum struct Operator {ADD,SUBTRACT,MULTIPLY,DIVIDE};
+	enum struct Operator {ADD,SUBTRACT,MULTIPLY,DIVIDE,EXPONENT};
 	constexpr static Operator to_Operator(char const);
 	constexpr static char to_sym(Operator const);
 	struct Op_node{
