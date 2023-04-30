@@ -121,10 +121,8 @@ auto parse_parenthetical(string const& formula,size_t head,char open, char close
 auto parse_term(string const& formula,size_t head,bool allow_leading_unary)
 	->std::optional<std::pair<Equation,size_t>>;
 
-auto parse_named_operator(string const& formula,size_t head)
-	->std::optional<std::pair<Equation,size_t>>{
-	DB(__func__ << ": " << formula.substr(0,head)<<" || "<<formula.substr(head));
-	
+Parser(named_operator){
+	unused(allow_leading_unary);
 	// Basic Functions
 	if(formula.substr(head).starts_with("\\sqrt")){
 		auto h=head+5;
@@ -132,15 +130,15 @@ auto parse_named_operator(string const& formula,size_t head)
 			auto [t,h2]=*tmplte;
 			if(auto body=parse_parenthetical(formula,h2,'{','}')){
 				auto [b,h3] = *body;
-				return {{{Equation::F_node({"\\sqrt",{t},{b}})},h3}};}}
+				Return(Equation::F_node({"\\sqrt",{t},{b}}),h3);}}
 		if(auto body=parse_parenthetical(formula,h,'{','}')){
 			auto [b,h2] = *body;
-			return {{{Equation::F_node({"\\sqrt",{b}})},h2}};}}
+			Return(Equation::F_node({"\\sqrt",{b}}),h2);}}
 	if(formula.substr(head).starts_with("\\ln")){
 		auto h=head+3;
 		if(auto body=parse_parenthetical(formula,h,'{','}')){
 			auto [b,h2] = *body;
-			return {{{Equation::F_node({"\\ln",{b}})},h2}};}}
+			Return(Equation::F_node({"\\ln",{b}}),h2);}}
 	if(formula.substr(head).starts_with("\\log")){
 		auto h=head+4;
 		if(h<formula.size() && formula[h]=='_'){
@@ -149,33 +147,32 @@ auto parse_named_operator(string const& formula,size_t head)
 				auto [bs,h3]=*base;
 				if(auto body=parse_parenthetical(formula,h3,'{','}')){
 					auto [b,h4] = *body;
-					return {{{Equation::F_node({{{bs},{}},"\\log",{b}})},h4}};}}}
+					Return(Equation::F_node({{{bs},{}},"\\log",{b}}),h4);}}}
 		if(auto body=parse_parenthetical(formula,h,'{','}')){
 			auto [b,h2] = *body;
-			return {{{Equation::F_node({"\\log",{b}})},h2}};}}
+			Return(Equation::F_node({"\\log",{b}}),h2);}}
 
 	// Trig Functions
 	if(formula.substr(head).starts_with("\\exp")){
 		auto h=head+4;
 		if(auto body=parse_parenthetical(formula,h,'{','}')){
 			auto [b,h2] = *body;
-			return {{{Equation::F_node({"\\exp",{b}})},h2}};}}
+			Return(Equation::F_node({"\\exp",{b}}),h2);}}
 	if(formula.substr(head).starts_with("\\sin")){
 		auto h=head+4;
 		if(auto body=parse_parenthetical(formula,h,'{','}')){
 			auto [b,h2] = *body;
-			return {{{Equation::F_node({"\\sin",{b}})},h2}};}}
+			Return(Equation::F_node({"\\sin",{b}}),h2);}}
 	if(formula.substr(head).starts_with("\\cos")){
 		auto h=head+4;
 		if(auto body=parse_parenthetical(formula,h,'{','}')){
 			auto [b,h2] = *body;
-			return {{{Equation::F_node({"\\cos",{b}})},h2}};}}
+			Return(Equation::F_node({"\\cos",{b}}),h2);}}
 	if(formula.substr(head).starts_with("\\tan")){
 		auto h=head+4;
 		if(auto body=parse_parenthetical(formula,h,'{','}')){
 			auto [b,h2] = *body;
-			return {{{Equation::F_node({"\\tan",{b}})},h2}};}}
- return {};
+			Return(Equation::F_node({"\\tan",{b}}),h2);}}
 }
 
 auto parse_constant(string const& formula,size_t head)
@@ -202,8 +199,8 @@ auto parse_term(string const& formula,size_t head,bool allow_leading_unary)
 		return cnst;
 	if(auto var=parse_variable(formula,head,allow_leading_unary))
 		return {{var[0].eq,var[0].head}};
-	if(auto func=parse_named_operator(formula,head))
-		return func;
+	if(auto func=parse_named_operator(formula,head,allow_leading_unary))
+		return {{func[0].eq,func[0].head}};
 	return {};
 }
 
