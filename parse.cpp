@@ -232,9 +232,7 @@ Parser(product){
 	}
 }
 
-auto parse_sum(string const& formula,size_t head,bool allow_leading_unary)
-	->std::optional<std::pair<Equation,size_t>>{
-	DB(__func__ << ": " << formula.substr(0,head)<<" || "<<formula.substr(head));
+Parser(sum){
 	// product+([+-]+product)*
 	if(auto term=parse_product(formula,head,allow_leading_unary)){
 		head=term[0].head;
@@ -247,20 +245,21 @@ auto parse_sum(string const& formula,size_t head,bool allow_leading_unary)
 					ret={Equation::Op_node({op,{ret},{term2[0].eq}})};
 				}else{
 					std::cerr <<"Error: Back track in parse_sum."<<std::endl;
-					return {{ret,head-1}};
+					Return(ret,head-1);
 				}
 			}else
-				return {{ret,head}};
+				break;
 		}
-		return {{ret,head}};
-	}else
-		return {};
+		Return(ret,head);
+	}
 }
 
 auto parse_exp(string const& formula,size_t head)
 	->std::optional<std::pair<Equation,size_t>>{
 	DB(__func__ << ": " << formula.substr(0,head)<<" || "<<formula.substr(head));
-	return parse_sum(formula,head,true); // good enough for now
+	if(auto sum=parse_sum(formula,head,true))
+		return {{sum[0].eq,sum[0].head}}; // good enough for now
+	return {};
 }
 
 auto parse_parenthetical(string const& formula,size_t head,char open, char close)
