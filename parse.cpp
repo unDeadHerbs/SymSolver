@@ -12,9 +12,40 @@
 
 using std::string;
 
-auto parse_number(string const& formula,size_t head,bool allow_unary_minus)
-	->std::optional<std::pair<double,size_t>>{
-	DB(__func__ << ": " << formula.substr(0,head)<<" || "<<formula.substr(head));
+struct ParserState{
+	Equation eq;
+	//std::vector<string> bound; // list of bound variables.
+	//std::vector<string> unbound; // list of unbound variables.
+	size_t head;
+};
+
+struct vPS{
+	std::vector<ParserState> PSs;
+	operator bool()const{return PSs.size();}
+	template<typename T>
+	auto operator[](T rhs)const{return PSs[rhs];}
+	auto push_back(ParserState rhs){return PSs.push_back(rhs);}
+};
+
+#define unused(X) (void)X
+#define Return(EQ,H) ret.push_back({EQ,H})
+#define Parser(NAME)																										\
+	struct parse_##NAME##_helper{																					\
+		vPS ret;																														\
+		void internal(string const&,size_t,bool);														\
+	};																																		\
+	vPS parse_number																											\
+	(string const& formula,size_t head,bool allow_unary_minus){						\
+		DB(__func__ << ": " <<																							\
+			 formula.substr(0,head)<<" || "<<formula.substr(head));						\
+		parse_number_helper h;																							\
+		h.internal(formula,head,allow_unary_minus);													\
+		return h.ret;																												\
+	}																																			\
+	void parse_##NAME##_helper::internal																	\
+	(string const& formula,size_t head,bool allow_unary_minus)
+
+Parser(number){
 	if(allow_unary_minus)
 		// TODO: it seems that >> can extract just the - and then fail?
 		allow_unary_minus=head+1<formula.size() && (std::isdigit(formula[head+1])
@@ -30,16 +61,16 @@ auto parse_number(string const& formula,size_t head,bool allow_unary_minus)
 		//std::cerr<<"[NUMBER] tellg = "<<buf.tellg()<<std::endl;
 		DB("parse_number: " << v );
 		if(buf.tellg()==-1)
-			return {{v,formula.size()}};
+			Return(v,formula.size());
 		else
-			return {{v,head+buf.tellg()}};
+			Return(v,head+buf.tellg());
 	}
-	return {};
 }
 
-auto parse_latex_basic(string const& formula,size_t head)
+auto parse_latex_basic(string const& formula,size_t head,bool allow_unary_minus)
 	->std::optional<std::pair<std::string,size_t>>{
 	DB(__func__ << ": " << formula.substr(0,head)<<" || "<<formula.substr(head));
+	unused(allow_unary_minus);
 	if(head>=formula.size()) return {};
 	if(formula[head]=='{'){
 		std::string ret({formula[head++]});
@@ -55,9 +86,9 @@ auto parse_latex_basic(string const& formula,size_t head)
 		return {{ret,head}};
 	}
 	if(auto on=parse_number(formula,head,false)){
-		auto [n,h]=*on; // just grabbing the length
-		DB("parse_latex_basic:" <<n);
-		return {{formula.substr(head,h),h}};
+		// Just grabbing the length.
+		DB("parse_latex_basic:" <<on[0].eq);
+		return {{formula.substr(head,on[0].head),on[0].head}};
 	}
 	std::cerr <<"Warning: LaTeX group requested but not found, using one char." << std::endl;
 	return {{{formula[head]},head+1}};
@@ -75,7 +106,7 @@ auto parse_variable(string const& formula,size_t head,bool allow_leading_unary)
 		std::string var({formula[head++]});
 		if(head<formula.size() && formula[head]=='_'){
 			var+=formula[head++];
-			if(auto nxt=parse_latex_basic(formula,head)){
+			if(auto nxt=parse_latex_basic(formula,head,allow_leading_unary)){
 				auto [s,h]=*nxt;
 				var+=s;
 				head=h;
@@ -173,10 +204,8 @@ auto parse_term(string const& formula,size_t head,bool allow_leading_unary)
 	// parenthesized | number | constant | variable | named_operator
 	if(auto par=parse_parenthetical(formula,head,'(',')'))
 		return par;
-	if(auto num=parse_number(formula,head,allow_leading_unary)){
-		auto [n,h]=*num;
-		return {{{n},h}};
-	}
+	if(auto num=parse_number(formula,head,allow_leading_unary))
+		return {{num[0].eq,num[0].head}};
 	if(auto cnst=parse_constant(formula,head))
 		return cnst;
 	if(auto var=parse_variable(formula,head,allow_leading_unary))
