@@ -254,12 +254,10 @@ Parser(sum){
 	}
 }
 
-auto parse_exp(string const& formula,size_t head)
-	->std::optional<std::pair<Equation,size_t>>{
-	DB(__func__ << ": " << formula.substr(0,head)<<" || "<<formula.substr(head));
-	if(auto sum=parse_sum(formula,head,true))
-		return {{sum[0].eq,sum[0].head}}; // good enough for now
-	return {};
+Parser(expression){
+	// good enough for now
+	if(auto sum=parse_sum(formula,head,allow_leading_unary))
+		Return(sum[0].eq,sum[0].head);
 }
 
 auto parse_parenthetical(string const& formula,size_t head,char open, char close)
@@ -268,18 +266,17 @@ auto parse_parenthetical(string const& formula,size_t head,char open, char close
 	// 'open+expression+'close
 	if(head>=formula.size()) return {};
 	if(formula[head++]!=open) return {};
-	if(auto eq=parse_exp(formula,head)){
-		auto [e,h]=*eq;
-		head=h;
+	if(auto eq=parse_expression(formula,head,true)){
+		head=eq[0].head;
 		if(head>=formula.size()) return {};
 		if(formula[head++]!=close) return {};
-		return {{e,head}};
+		return {{eq[0].eq,head}};
 	}else return {};
 }
 
 Equation parse_formula(string const& formula) {
-	if(auto eq= parse_exp(formula,0))
-		if(eq->second == formula.size())
-			return eq->first;
+	if(auto eq= parse_expression(formula,0,true))
+		if(eq[0].head == formula.size())
+			return eq[0].eq;
 	throw "Unable to Parse";
 }
