@@ -17,240 +17,259 @@ the "4 functions", and parenthesis.
 *** 00000002 Variable
 #+BEGIN_SRC scheme :tangle tests.d/00000002-parser-variable.input
 a
-
 #+END_SRC
 #+BEGIN_SRC scheme :tangle tests.d/00000002-parser-variable.output
 a
-
 #+END_SRC
 *** 00000003 Sum
 #+BEGIN_SRC scheme :tangle tests.d/00000003-parser-sum.input
 1+2
-
 #+END_SRC
 #+BEGIN_SRC scheme :tangle tests.d/00000003-parser-sum.output
 1+2
-
 #+END_SRC
 *** 00000004 Difference
 #+BEGIN_SRC scheme :tangle tests.d/00000004-parser-difference.input
 2-1
-
 #+END_SRC
 #+BEGIN_SRC scheme :tangle tests.d/00000004-parser-difference.output
 2-1
-
 #+END_SRC
 *** 00000005 Product
 #+BEGIN_SRC scheme :tangle tests.d/00000005-parser-prod.input
 1*2
-
 #+END_SRC
 #+BEGIN_SRC scheme :tangle tests.d/00000005-parser-prod.output
 1*2
-
 #+END_SRC
 *** 00000006 Fraction
 #+BEGIN_SRC scheme :tangle tests.d/00000006-parser-frac.input
 1/2
-
 #+END_SRC
 #+BEGIN_SRC scheme :tangle tests.d/00000006-parser-frac.output
 1/2
-
 #+END_SRC
 ** Parentheses
 *** 00000007 Group
 #+BEGIN_SRC scheme :tangle tests.d/00000007-parser-group.input
 (1+1)/2
-
 #+END_SRC
 #+BEGIN_SRC scheme :tangle tests.d/00000007-parser-group.output
 (1+1)/2
-
 #+END_SRC
 *** 00000008 unGroup
 #+BEGIN_SRC scheme :tangle tests.d/00000008-parser-ungroup.input
 (1*2)+3
-
 #+END_SRC
 #+BEGIN_SRC scheme :tangle tests.d/00000008-parser-ungroup.output
 1*2+3
-
 #+END_SRC
 *** 00000009 unGroup 2
 #+BEGIN_SRC scheme :tangle tests.d/00000009-parser-ungroup2.input
 1+(2+3)
-
 #+END_SRC
 #+BEGIN_SRC scheme :tangle tests.d/00000009-parser-ungroup2.output
 1+2+3
-
 #+END_SRC
 *** 00000010 Group 2
 #+BEGIN_SRC scheme :tangle tests.d/00000010-parser-group2.input
 1-(2+3)
-
 #+END_SRC
 #+BEGIN_SRC scheme :tangle tests.d/00000010-parser-group2.output
 1-(2+3)
-
 #+END_SRC
 *** 00000011 unGroup 3
 #+BEGIN_SRC scheme :tangle tests.d/00000011-parser-ungroup3.input
 1-2+3
-
 #+END_SRC
 #+BEGIN_SRC scheme :tangle tests.d/00000011-parser-ungroup3.output
 1-2+3
-
 #+END_SRC
 *** 00000012 unGroup 4
 #+BEGIN_SRC scheme :tangle tests.d/00000012-parser-ungroup4.input
 1*(2*3)
-
 #+END_SRC
 #+BEGIN_SRC scheme :tangle tests.d/00000012-parser-ungroup4.output
 1*2*3
-
 #+END_SRC
 *** 00000013 Group 3
 #+BEGIN_SRC scheme :tangle tests.d/00000013-parser-group3.input
 1/(2*3)
-
 #+END_SRC
 #+BEGIN_SRC scheme :tangle tests.d/00000013-parser-group3.output
 1/(2*3)
-
 #+END_SRC
 *** 00000014 unGroup 5
 #+BEGIN_SRC scheme :tangle tests.d/00000014-parser-ungroup5.input
 1/2*3
-
 #+END_SRC
 #+BEGIN_SRC scheme :tangle tests.d/00000014-parser-ungroup5.output
 1/2*3
-
 #+END_SRC
 *** 00000015 unGroup 6
 #+BEGIN_SRC scheme :tangle tests.d/00000015-parser-ungroup6.input
 1-2*3
-
 #+END_SRC
 #+BEGIN_SRC scheme :tangle tests.d/00000015-parser-ungroup6.output
 1-2*3
-
 #+END_SRC
 ** Basic With Vars
 *** 00000016 Sum Variables
 #+BEGIN_SRC scheme :tangle tests.d/00000016-parser-sum_vars.input
 x+y
-
 #+END_SRC
 #+BEGIN_SRC scheme :tangle tests.d/00000016-parser-sum_vars.output
 x+y
-
 #+END_SRC
 *** 00000017 Difference Variables
 #+BEGIN_SRC scheme :tangle tests.d/00000017-parser-difference_vars.input
 x-y
-
 #+END_SRC
 #+BEGIN_SRC scheme :tangle tests.d/00000017-parser-difference_vars.output
 x-y
-
 #+END_SRC
 *** 00000018 Product Variables
 #+BEGIN_SRC scheme :tangle tests.d/00000018-parser-prod_vars.input
 x*y
-
 #+END_SRC
 #+BEGIN_SRC scheme :tangle tests.d/00000018-parser-prod_vars.output
 x*y
-
 #+END_SRC
-*** 00000019 Product Variables Without
+*** 00000019 Product Variables Without Number
 #+BEGIN_SRC scheme :tangle tests.d/00000019-parser-prod_vars_without.input
 xy
-
 #+END_SRC
 #+BEGIN_SRC scheme :tangle tests.d/00000019-parser-prod_vars_without.output
 x*y
-
 #+END_SRC
 *** 00000020 Product Variable with Number
 #+BEGIN_SRC scheme :tangle tests.d/00000020-parser-prod_var_num.input
 3x
-
 #+END_SRC
 #+BEGIN_SRC scheme :tangle tests.d/00000020-parser-prod_var_num.output
 3*x
-
 #+END_SRC
 *** 00000021 Fraction Variables
 #+BEGIN_SRC scheme :tangle tests.d/00000021-parser-frac_vars.input
 x/y
-
 #+END_SRC
 #+BEGIN_SRC scheme :tangle tests.d/00000021-parser-frac_vars.output
 x/y
-
 #+END_SRC
 *** 00000022 Fraction Variable Bottom
 #+BEGIN_SRC scheme :tangle tests.d/00000022-parser-frac_var_bot.input
 1/x
-
 #+END_SRC
 #+BEGIN_SRC scheme :tangle tests.d/00000022-parser-frac_var_bot.output
 1/x
-
 #+END_SRC
 *** 00000023 Fraction Variable Top
 #+BEGIN_SRC scheme :tangle tests.d/00000023-parser-frac_var_top.input
 x/2
-
 #+END_SRC
 #+BEGIN_SRC scheme :tangle tests.d/00000023-parser-frac_var_top.output
 x/2
-
 #+END_SRC
 ** Number Features
 *** 00000024 Negatives
 #+BEGIN_SRC scheme :tangle tests.d/00000024-parser-negitive.input
 -3
-
 #+END_SRC
 #+BEGIN_SRC scheme :tangle tests.d/00000024-parser-negitive.output
 -3
-
 #+END_SRC
 *** 00000025 Decimal
 #+BEGIN_SRC scheme :tangle tests.d/00000025-parser-decimal.input
 1.2
-
 #+END_SRC
 #+BEGIN_SRC scheme :tangle tests.d/00000025-parser-decimal.output
 1.2
-
 #+END_SRC
 ** Variable Features
 *** 00000026 Variable Names 1
 #+BEGIN_SRC scheme :tangle tests.d/00000026-parser-var_names_1.input
 x_1
-
 #+END_SRC
 #+BEGIN_SRC scheme :tangle tests.d/00000026-parser-var_names_1.output
 x_1
-
 #+END_SRC
 *** 00000027 Variable Names 2
 #+BEGIN_SRC scheme :tangle tests.d/00000027-parser-var_names_2.input
 x_{name}
-
 #+END_SRC
 #+BEGIN_SRC scheme :tangle tests.d/00000027-parser-var_names_2.output
 x_{name}
-
+#+END_SRC
+** Completeness tests
+*** 00000028 - Multi Digit Number
+#+BEGIN_SRC scheme :tangle tests.d/00000028-parser-number_multi_digit.input
+1234
+#+END_SRC
+#+BEGIN_SRC scheme :tangle tests.d/00000028-parser-number_multi_digit.output
+1234
+#+END_SRC
+*** 00000029 - Variable Subtraction
+#+BEGIN_SRC scheme :tangle tests.d/00000029-parser-minus_variable.input
+1-x
+#+END_SRC
+#+BEGIN_SRC scheme :tangle tests.d/00000029-parser-minus_variable.output
+1-x
+#+END_SRC
+*** 00000030 - Variable Unary Minus 
+#+BEGIN_SRC scheme :tangle tests.d/00000030-parser-negitive_variable.input
+1*-x
+#+END_SRC
+#+BEGIN_SRC scheme :tangle tests.d/00000030-parser-negitive_variable.output
+1*-1*x
+#+END_SRC
+*** 00000031 - Variable Unary Minus 2
+#+BEGIN_SRC scheme :tangle tests.d/00000031-parser-negitive_variable_2.input
+1/-x
+#+END_SRC
+#+BEGIN_SRC scheme :tangle tests.d/00000031-parser-negitive_variable_2.output
+1/(-1*x)
+#+END_SRC
+*** 00000032 - Variable Unary Minus 3
+#+BEGIN_SRC scheme :tangle tests.d/00000032-parser-negitive_variable_3.input
+1+-x
+#+END_SRC
+#+BEGIN_SRC scheme :tangle tests.d/00000032-parser-negitive_variable_3.output
+1+-1*x
+#+END_SRC
+*** 00000033 - No Unary Plus
+#+BEGIN_SRC scheme :tangle tests.d/00000033-parser-no_unary_plus.input
+1++x
+#+END_SRC
+#+BEGIN_SRC scheme :tangle tests.d/00000033-parser-no_unary_plus.output
+Parse Error
+#+END_SRC
+*** 00000034 - Dangling Open
+#+BEGIN_SRC scheme :tangle tests.d/00000034-parser-dangle_open.input
+(
+#+END_SRC
+#+BEGIN_SRC scheme :tangle tests.d/00000034-parser-dangle_open.output
+Parse Error
+#+END_SRC
+*** 00000035 - Dangling Close
+#+BEGIN_SRC scheme :tangle tests.d/00000035-parser-dangle_close.input
+)
+#+END_SRC
+#+BEGIN_SRC scheme :tangle tests.d/00000035-parser-dangle_close.output
+Parse Error
+#+END_SRC
+*** 00000036 - Complex Dangling Open
+#+BEGIN_SRC scheme :tangle tests.d/00000036-parser-dangle_open_2.input
+1+(3+
+#+END_SRC
+#+BEGIN_SRC scheme :tangle tests.d/00000036-parser-dangle_open_2.output
+Parse Error
+#+END_SRC
+*** 00000037 - Complex Dangling Close
+#+BEGIN_SRC scheme :tangle tests.d/00000037-parser-dangle_close_2.input
+1+x)
+#+END_SRC
+#+BEGIN_SRC scheme :tangle tests.d/00000037-parser-dangle_close_2.output
+Parse Error
 #+END_SRC
 * Simplifyer Test - Part 1
 Check for some basic simplification and arithmetic.
@@ -443,8 +462,30 @@ y*x+x*2
 #+BEGIN_SRC scheme :tangle tests.d/00001026-simplifyer-lex_var_8.output
 x*(-1+x)*(2+x)*(4+x)*(11+y)*(x+y)
 #+END_SRC
+** Completeness Tests
+*** 00001027 Division by Zero
+#+BEGIN_SRC scheme :tangle tests.d/00001027-simplifyer-div_zero.input
+1/0
+#+END_SRC
+#+BEGIN_SRC scheme :tangle tests.d/00001027-simplifyer-div_zero.output
+\infty
+#+END_SRC
+*** 00001028 Negative Division by Zero
+#+BEGIN_SRC scheme :tangle tests.d/00001028-simplifyer-div_zero_2.input
+-1/0
+#+END_SRC
+#+BEGIN_SRC scheme :tangle tests.d/00001028-simplifyer-div_zero_2.output
+-\infty
+#+END_SRC
+*** 00001029 Zero Division by Zero
+#+BEGIN_SRC scheme :tangle tests.d/00001029-simplifyer-div_zero_3.input
+0/0
+#+END_SRC
+#+BEGIN_SRC scheme :tangle tests.d/00001029-simplifyer-div_zero_3.output
+NaN
+#+END_SRC
 * Parser Tests - Part 2
-Parse some simple named functions and constants:
+Parse some simple named functions and constants.
 ** Common Operators
 *** 00002001 Square Root
 #+BEGIN_SRC scheme :tangle tests.d/00002001-parser-square_root.input

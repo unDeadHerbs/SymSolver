@@ -63,9 +63,14 @@ auto parse_latex_basic(string const& formula,size_t head)
 	return {{{formula[head]},head+1}};
 }
 
-auto parse_variable(string const& formula,size_t head)
+auto parse_variable(string const& formula,size_t head,bool allow_leading_unary)
 	->std::optional<std::pair<Equation,size_t>>{
 	DB(__func__ << ": " << formula.substr(0,head)<<" || "<<formula.substr(head));
+	if(allow_leading_unary && head<formula.size() && formula[head]=='-')
+		if(auto var=parse_variable(formula,head+1,false)){
+			auto [v,h] =*var;
+			return {{Equation({Equation::Operator::MULTIPLY,Equation(-1),v}),h}};
+		}
 	if(head<formula.size() && std::isalpha(formula[head])){
 		std::string var({formula[head++]});
 		if(head<formula.size() && formula[head]=='_'){
@@ -136,8 +141,7 @@ auto parse_term(string const& formula,size_t head,bool allow_leading_unary)
 		auto [n,h]=*num;
 		return {{{n},h}};
 	}
-	if(auto var=parse_variable(formula,head))
-		// TODO: Leading unary on Variables.
+	if(auto var=parse_variable(formula,head,allow_leading_unary))
 		return var;
 	if(auto func=parse_named_operator(formula,head))
 		return func;

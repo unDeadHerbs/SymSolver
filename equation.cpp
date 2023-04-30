@@ -1,5 +1,6 @@
 #include "equation.hpp"
 #include <iostream>
+#include <cmath>
 
 // Copied from cppreference, not sure why its not in the std namespace already.
 // This lets std::visit take a set of lambdas.
@@ -98,7 +99,17 @@ bool right_binding(Equation::Operator op){
 
 std::ostream& operator<<(std::ostream& o,Equation const& rhs){
 	std::visit(overloaded{
-			[&](double val){o << val;},
+			[&](double val){
+				if(std::isinf(val))
+					if(val>0)
+						o<<"\\infty";
+					else
+						o<<"-\\infty";
+				else if(std::isnan(val))
+					o<<"NaN";
+				else
+					o << val;
+			},
 			[&](Equation::Variable var){o << var.name;},
 			[&](Equation::F_node const& f){
 				o << f.function;

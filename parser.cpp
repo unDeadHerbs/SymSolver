@@ -26,6 +26,7 @@ int main(int argc, char** argv){
 		std::cout<<eq<<std::endl;
 	}catch(const char* e){
 		std::cerr<<"[ERROR] Caught unhandled Exception: \""<<e<<"\""<<std::endl;
+		std::cout<<"Parse Error"<<std::endl;
 	}
 
 	return 0;
