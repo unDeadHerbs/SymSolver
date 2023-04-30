@@ -35,25 +35,25 @@ struct vPS{
 		void internal(string const&,size_t,bool);														\
 	};																																		\
 	vPS parse_##NAME																											\
-	(string const& formula,size_t head,bool allow_unary_minus){						\
+	(string const& formula,size_t head,bool allow_leading_unary){						\
 		DB(__func__ << ": " <<																							\
 			 formula.substr(0,head)<<" || "<<formula.substr(head));						\
 		parse_##NAME##_helper h;																						\
-		h.internal(formula,head,allow_unary_minus);													\
+		h.internal(formula,head,allow_leading_unary);													\
 		return h._ret;																											\
 	}																																			\
 	void parse_##NAME##_helper::internal																	\
-	(string const& formula,size_t head,bool allow_unary_minus)
+	(string const& formula,size_t head,bool allow_leading_unary)
 
 Parser(number){
-	if(allow_unary_minus)
+	if(allow_leading_unary)
 		// TODO: it seems that >> can extract just the - and then fail?
-		allow_unary_minus=head+1<formula.size() && (std::isdigit(formula[head+1])
+		allow_leading_unary=head+1<formula.size() && (std::isdigit(formula[head+1])
 																								|| formula[head+1]=='.');
 	if(head<formula.size()
 		 && ( std::isdigit(formula[head])
 					|| formula[head]=='.'
-					|| (allow_unary_minus && formula[head]=='-'))){
+					|| (allow_leading_unary && formula[head]=='-'))){
 		std::istringstream buf(formula.substr(head));
 		double v;
 		buf >> v;
@@ -68,7 +68,7 @@ Parser(number){
 }
 
 Parser(latex_basic){
-	unused(allow_unary_minus);
+	unused(allow_leading_unary);
 	if(head>=formula.size()) return;
 	if(formula[head]=='{'){
 		std::string ret({formula[head++]});
@@ -92,14 +92,10 @@ Parser(latex_basic){
 	}
 }
 
-auto parse_variable(string const& formula,size_t head,bool allow_leading_unary)
-	->std::optional<std::pair<Equation,size_t>>{
-	DB(__func__ << ": " << formula.substr(0,head)<<" || "<<formula.substr(head));
+Parser(variable){
 	if(allow_leading_unary && head<formula.size() && formula[head]=='-')
-		if(auto var=parse_variable(formula,head+1,false)){
-			auto [v,h] =*var;
-			return {{Equation({Equation::Operator::MULTIPLY,Equation(-1),v}),h}};
-		}
+		if(auto var=parse_variable(formula,head+1,false))
+			Return(Equation({Equation::Operator::MULTIPLY,Equation(-1),var[0].eq}),var[0].head);
 	if(head<formula.size() && std::isalpha(formula[head])){
 		std::string var({formula[head++]});
 		if(head<formula.size() && formula[head]=='_'){
@@ -109,15 +105,14 @@ auto parse_variable(string const& formula,size_t head,bool allow_leading_unary)
 				head=nxt[0].head;
 			}else{
 				std::cerr <<"Error: Variable LaTeX subscript requested but missing." << std::endl;
-				return {};
+				return;
 			}
 		}
 		if(var=="i") // The imaginary unit isn't a variable.
-			return{};
+			return;
 		DB("parse_variable: " <<var);
-		return {{{Equation::Variable({var})},head}};
+		Return({Equation::Variable({var})},head);
 	}
-	return {};
 }
 
 auto parse_parenthetical(string const& formula,size_t head,char open, char close)
@@ -206,7 +201,7 @@ auto parse_term(string const& formula,size_t head,bool allow_leading_unary)
 	if(auto cnst=parse_constant(formula,head))
 		return cnst;
 	if(auto var=parse_variable(formula,head,allow_leading_unary))
-		return var;
+		return {{var[0].eq,var[0].head}};
 	if(auto func=parse_named_operator(formula,head))
 		return func;
 	return {};
