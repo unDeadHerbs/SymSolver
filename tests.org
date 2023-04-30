@@ -621,3 +621,32 @@ i
 #+BEGIN_SRC scheme :tangle tests.d/00002019-parser-i.output
 i
 #+END_SRC
+** Known Functions
+*** 00002020 Exp Operator
+#+BEGIN_SRC scheme :tangle tests.d/00002020-parser-exp.input
+\exp{3}
+#+END_SRC
+#+BEGIN_SRC scheme :tangle tests.d/00002020-parser-exp.output
+\exp{3}
+#+END_SRC
+*** 00002021 Sin
+#+BEGIN_SRC scheme :tangle tests.d/00002021-parser-sin.input
+\sin{3}
+#+END_SRC
+#+BEGIN_SRC scheme :tangle tests.d/00002021-parser-sin.output
+\sin{3}
+#+END_SRC
+*** 00002022 Cos
+#+BEGIN_SRC scheme :tangle tests.d/00002022-parser-cos.input
+\cos{3}
+#+END_SRC
+#+BEGIN_SRC scheme :tangle tests.d/00002022-parser-cos.output
+\cos{3}
+#+END_SRC
+*** 00002023 Tan
+#+BEGIN_SRC scheme :tangle tests.d/00002023-parser-tan.input
+\tan{3}
+#+END_SRC
+#+BEGIN_SRC scheme :tangle tests.d/00002023-parser-tan.output
+\tan{3}
+#+END_SRC
