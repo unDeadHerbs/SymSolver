@@ -35,11 +35,11 @@ struct vPS{
 		void internal(string const&,size_t,bool);														\
 	};																																		\
 	vPS parse_##NAME																											\
-	(string const& formula,size_t head,bool allow_leading_unary){						\
+	(string const& formula,size_t head,bool allow_leading_unary){					\
 		DB(__func__ << ": " <<																							\
 			 formula.substr(0,head)<<" || "<<formula.substr(head));						\
 		parse_##NAME##_helper h;																						\
-		h.internal(formula,head,allow_leading_unary);													\
+		h.internal(formula,head,allow_leading_unary);												\
 		return h._ret;																											\
 	}																																			\
 	void parse_##NAME##_helper::internal																	\
@@ -207,9 +207,7 @@ Parser(power){
 	}
 }
 
-auto parse_product(string const& formula,size_t head,bool allow_leading_unary)
-	->std::optional<std::pair<Equation,size_t>>{
-	DB(__func__ << ": " << formula.substr(0,head)<<" || "<<formula.substr(head));
+Parser(product){
 	// power+(('*'?|'/')+power)*
 	if(auto power=parse_power(formula,head,allow_leading_unary)){
 		head=power[0].head;
@@ -222,18 +220,16 @@ auto parse_product(string const& formula,size_t head,bool allow_leading_unary)
 					ret={Equation::Op_node({op,{ret},{power2[0].eq}})};
 				}else{
 					std::cerr <<"Error: Back track in parse_product."<<std::endl;
-					return {{ret,head-1}};
+					Return(ret,head-1);
 				}
+			}else if(auto power2=parse_power(formula,head,false)){
+				head=power2[0].head;
+				ret={Equation::Op_node({'*',{ret},{power2[0].eq}})};
 			}else
-				if(auto power2=parse_power(formula,head,false)){
-					head=power2[0].head;
-					ret={Equation::Op_node({'*',{ret},{power2[0].eq}})};
-				}else
-					return {{ret,head}};
+				break;
 		}
-		return {{ret,head}};
-	}else
-		return {};
+		Return(ret,head);
+	}
 }
 
 auto parse_sum(string const& formula,size_t head,bool allow_leading_unary)
@@ -241,16 +237,14 @@ auto parse_sum(string const& formula,size_t head,bool allow_leading_unary)
 	DB(__func__ << ": " << formula.substr(0,head)<<" || "<<formula.substr(head));
 	// product+([+-]+product)*
 	if(auto term=parse_product(formula,head,allow_leading_unary)){
-		auto [t,h]=*term;
-		head=h;
-		auto ret=t;
+		head=term[0].head;
+		auto ret=term[0].eq;
 		while(head<formula.size()){
 			if(formula[head]=='+' || formula[head]=='-'){
 				auto op=formula[head++];
 				if(auto term2=parse_product(formula,head,true)){
-					auto [t2,h2]=*term2;
-					head=h2;
-					ret={Equation::Op_node({op,{ret},{t2}})};
+					head=term2[0].head;
+					ret={Equation::Op_node({op,{ret},{term2[0].eq}})};
 				}else{
 					std::cerr <<"Error: Back track in parse_sum."<<std::endl;
 					return {{ret,head-1}};
