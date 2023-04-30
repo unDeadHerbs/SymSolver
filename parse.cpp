@@ -118,8 +118,8 @@ Parser(variable){
 auto parse_parenthetical(string const& formula,size_t head,char open, char close)
 	->std::optional<std::pair<Equation,size_t>>;
 
-auto parse_term(string const& formula,size_t head,bool allow_leading_unary)
-	->std::optional<std::pair<Equation,size_t>>;
+vPS parse_term(string const& formula,size_t head,bool allow_leading_unary);
+// TODO: Prototype Macro?
 
 Parser(named_operator){
 	unused(allow_leading_unary);
@@ -143,11 +143,10 @@ Parser(named_operator){
 		auto h=head+4;
 		if(h<formula.size() && formula[h]=='_'){
 			auto h2=h+1;
-			if(auto base=parse_term(formula,h2,false)){
-				auto [bs,h3]=*base;
-				if(auto body=parse_parenthetical(formula,h3,'{','}')){
+			if(auto base=parse_term(formula,h2,false))
+				if(auto body=parse_parenthetical(formula,base[0].head,'{','}')){
 					auto [b,h4] = *body;
-					Return(Equation::F_node({{{bs},{}},"\\log",{b}}),h4);}}}
+					Return(Equation::F_node({{{base[0].eq},{}},"\\log",{b}}),h4);}}
 		if(auto body=parse_parenthetical(formula,h,'{','}')){
 			auto [b,h2] = *body;
 			Return(Equation::F_node({"\\log",{b}}),h2);}}
@@ -185,34 +184,30 @@ Parser(constant){
 		Return(Equation::Constant({"i"}),head+1);
 }
 
-auto parse_term(string const& formula,size_t head,bool allow_leading_unary)
-	->std::optional<std::pair<Equation,size_t>>{
-	DB(__func__ << ": " << formula.substr(0,head)<<" || "<<formula.substr(head));
+Parser(term){
 	// parenthesized | number | constant | variable | named_operator
 	if(auto par=parse_parenthetical(formula,head,'(',')'))
-		return par;
+		Return(par->first,par->second);
 	if(auto num=parse_number(formula,head,allow_leading_unary))
-		return {{num[0].eq,num[0].head}};
+		Return(num[0].eq,num[0].head);
 	if(auto cnst=parse_constant(formula,head,allow_leading_unary))
-		return {{cnst[0].eq,cnst[0].head}};
+		Return(cnst[0].eq,cnst[0].head);
 	if(auto var=parse_variable(formula,head,allow_leading_unary))
-		return {{var[0].eq,var[0].head}};
+		Return(var[0].eq,var[0].head);
 	if(auto func=parse_named_operator(formula,head,allow_leading_unary))
-		return {{func[0].eq,func[0].head}};
-	return {};
+		Return(func[0].eq,func[0].head);
 }
 
 auto parse_power(string const& formula,size_t head,bool allow_leading_unary)
 	->std::optional<std::pair<Equation,size_t>>{
 	DB(__func__ << ": " << formula.substr(0,head)<<" || "<<formula.substr(head));
 	if(auto term=parse_term(formula,head,allow_leading_unary)){
-		auto [t,h] = *term;
-		if(h<formula.size() && formula[h]=='^')
-			if(auto exp=parse_power(formula,h+1,true)){
+		if(term[0].head<formula.size() && formula[term[0].head]=='^')
+			if(auto exp=parse_power(formula,term[0].head+1,true)){
 				auto [e,h2]=*exp;
-				return {{{Equation::Op_node({'^',t,e})},h2}};
+				return {{{Equation::Op_node({'^',term[0].eq,e})},h2}};
 			}
-		return term;
+		return {{term[0].eq,term[0].head}};
 	}
 	return {};
 }
