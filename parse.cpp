@@ -84,6 +84,8 @@ auto parse_variable(string const& formula,size_t head,bool allow_leading_unary)
 				return {};
 			}
 		}
+		if(var=="i") // The imaginary unit isn't a variable.
+			return{};
 		DB("parse_variable: " <<var);
 		return {{{Equation::Variable({var})},head}};
 	}
@@ -99,8 +101,6 @@ auto parse_term(string const& formula,size_t head,bool allow_leading_unary)
 auto parse_named_operator(string const& formula,size_t head)
 	->std::optional<std::pair<Equation,size_t>>{
 	DB(__func__ << ": " << formula.substr(0,head)<<" || "<<formula.substr(head));
-	// starts with \sqrt
-	// parse { exp }
 	if(formula.substr(head).starts_with("\\sqrt")){
 		auto h=head+5;
 		if(auto tmplte=parse_parenthetical(formula,h,'[',']')){
@@ -131,16 +131,30 @@ auto parse_named_operator(string const& formula,size_t head)
 	return {};
 }
 
+auto parse_constant(string const& formula,size_t head)
+	->std::optional<std::pair<Equation,size_t>>{
+	DB(__func__ << ": " << formula.substr(0,head)<<" || "<<formula.substr(head));
+	if(formula.substr(head).starts_with("\\pi"))
+		return {{{Equation::Constant({"pi"})},head+3}};
+	if(formula.substr(head).starts_with("\\phi"))
+		return {{{Equation::Constant({"phi"})},head+4}};
+	if(formula.substr(head).starts_with("i"))
+		return {{{Equation::Constant({"i"})},head+1}};
+	return {};
+}
+
 auto parse_term(string const& formula,size_t head,bool allow_leading_unary)
 	->std::optional<std::pair<Equation,size_t>>{
 	DB(__func__ << ": " << formula.substr(0,head)<<" || "<<formula.substr(head));
-	// parenthesized | number | variable | named_operator
+	// parenthesized | number | constant | variable | named_operator
 	if(auto par=parse_parenthetical(formula,head,'(',')'))
 		return par;
 	if(auto num=parse_number(formula,head,allow_leading_unary)){
 		auto [n,h]=*num;
 		return {{{n},h}};
 	}
+	if(auto cnst=parse_constant(formula,head))
+		return cnst;
 	if(auto var=parse_variable(formula,head,allow_leading_unary))
 		return var;
 	if(auto func=parse_named_operator(formula,head))

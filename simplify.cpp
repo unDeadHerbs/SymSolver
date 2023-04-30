@@ -9,7 +9,7 @@
 #define DB(X) do{std::cerr<<X<<std::endl;}while(0)
 #else
 #define DB(X) do{}while(0)
-#endif
+#endif		
 
 // Copied from cppreference, not sure why its not in the std namespace already.
 // This lets std::visit take a set of lambdas.
@@ -63,6 +63,7 @@ bool simplify_inplace(Equation& e) {
 			
 			[](double){NoChange();},
 			[](Equation::Variable){NoChange();},
+			[](Equation::Constant){NoChange();},
 			[&](Equation::Op_node& eq){
 				// TODO: Instead of short cutting, loop.  This will save the
 				// stack frames from needing remaking and can be made smarter
@@ -75,7 +76,7 @@ bool simplify_inplace(Equation& e) {
 					Changed();
 
 				DB(e);
-
+				
 				#define Return_Swap() Return("LR Swap",Equation({op,*eq.right,*eq.left}))
 				using Equation::Operator::ADD;
 				using Equation::Operator::SUBTRACT;
@@ -99,7 +100,7 @@ bool simplify_inplace(Equation& e) {
 				if(commutative(op) && greater_than(*eq.left,*eq.right)) Return_Swap();
 				if(commutative(op) && vre && vre->op==op && greater_than(*eq.left,*vre->left))
 					Return("LwRL Swap",Equation({op,*vre->left,Equation({op,*eq.left,*vre->right})}));
-
+				
 				switch(op){
 				case ADD:
 					if(vln && *vln==0) Return("Left 0 Addition",*eq.right);

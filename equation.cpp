@@ -111,6 +111,16 @@ std::ostream& operator<<(std::ostream& o,Equation const& rhs){
 					o << val;
 			},
 			[&](Equation::Variable var){o << var.name;},
+			[&](Equation::Constant cnst){
+				if(cnst.name=="pi")
+					o<<"\\pi";
+				else if(cnst.name=="phi")
+					o<<"\\phi";
+				else if(cnst.name=="i")
+					o<<"i";
+				else
+					o<<"[New Constant, Fix Printer]";
+			},
 			[&](Equation::F_node const& f){
 				o << f.function;
 				if(f.subscripts.size()){

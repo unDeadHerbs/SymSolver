@@ -599,3 +599,25 @@ Parse some simple named functions and constants.
 #+BEGIN_SRC scheme :tangle tests.d/00002016-parser-pow_6.output
 2-3^4
 #+END_SRC
+** Known Constants
+*** 00002017 Pi
+#+BEGIN_SRC scheme :tangle tests.d/00002017-parser-pi.input
+\pi
+#+END_SRC
+#+BEGIN_SRC scheme :tangle tests.d/00002017-parser-pi.output
+\pi
+#+END_SRC
+*** 00002018 Phi
+#+BEGIN_SRC scheme :tangle tests.d/00002018-parser-phi.input
+\phi
+#+END_SRC
+#+BEGIN_SRC scheme :tangle tests.d/00002018-parser-phi.output
+\phi
+#+END_SRC
+*** 00002019 i
+#+BEGIN_SRC scheme :tangle tests.d/00002019-parser-i.input
+i
+#+END_SRC
+#+BEGIN_SRC scheme :tangle tests.d/00002019-parser-i.output
+i
+#+END_SRC

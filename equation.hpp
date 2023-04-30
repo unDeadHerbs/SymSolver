@@ -10,6 +10,9 @@ struct Equation {
 	struct Variable{
 		std::string name;
 	};
+	struct Constant{
+		std::string name;
+	};
 	enum struct Operator {ADD,SUBTRACT,MULTIPLY,DIVIDE,EXPONENT};
 	constexpr static Operator to_Operator(char const);
 	constexpr static char to_sym(Operator const);
@@ -36,11 +39,12 @@ struct Equation {
 		F_node(std::pair<std::vector<Equation>,std::vector<Equation>> ssc,std::string f,std::vector<Equation> b)
 			:function(f),subscripts(ssc.first),superscripts(ssc.second),arguments(b){}
 	};
-	std::variant<double,Op_node,Variable,F_node> value;
+	std::variant<double,Constant,Variable,Op_node,F_node> value;
 	Equation(double v):value(v){};
 	Equation(F_node v):value(v){};
 	Equation(Op_node v):value(v){};
 	Equation(Variable v):value(v){};
+	Equation(Constant v):value(v){};
 };
 
 int precedent(Equation::Operator op);
