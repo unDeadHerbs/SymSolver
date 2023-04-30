@@ -198,18 +198,13 @@ Parser(term){
 		Return(func[0].eq,func[0].head);
 }
 
-auto parse_power(string const& formula,size_t head,bool allow_leading_unary)
-	->std::optional<std::pair<Equation,size_t>>{
-	DB(__func__ << ": " << formula.substr(0,head)<<" || "<<formula.substr(head));
+Parser(power){
 	if(auto term=parse_term(formula,head,allow_leading_unary)){
 		if(term[0].head<formula.size() && formula[term[0].head]=='^')
-			if(auto exp=parse_power(formula,term[0].head+1,true)){
-				auto [e,h2]=*exp;
-				return {{{Equation::Op_node({'^',term[0].eq,e})},h2}};
-			}
-		return {{term[0].eq,term[0].head}};
+			if(auto exp=parse_power(formula,term[0].head+1,true))
+				Return(Equation::Op_node({'^',term[0].eq,exp[0].eq}),exp[0].head);
+		Return(term[0].eq,term[0].head);
 	}
-	return {};
 }
 
 auto parse_product(string const& formula,size_t head,bool allow_leading_unary)
@@ -217,25 +212,22 @@ auto parse_product(string const& formula,size_t head,bool allow_leading_unary)
 	DB(__func__ << ": " << formula.substr(0,head)<<" || "<<formula.substr(head));
 	// power+(('*'?|'/')+power)*
 	if(auto power=parse_power(formula,head,allow_leading_unary)){
-		auto [t,h]=*power;
-		head=h;
-		auto ret=t;
+		head=power[0].head;
+		auto ret=power[0].eq;
 		while(head<formula.size()){
 			if(formula[head]=='*' || formula[head]=='/'){
 				auto op=formula[head++];
 				if(auto power2=parse_power(formula,head,true)){
-					auto [t2,h2]=*power2;
-					head=h2;
-					ret={Equation::Op_node({op,{ret},{t2}})};
+					head=power2[0].head;
+					ret={Equation::Op_node({op,{ret},{power2[0].eq}})};
 				}else{
 					std::cerr <<"Error: Back track in parse_product."<<std::endl;
 					return {{ret,head-1}};
 				}
 			}else
 				if(auto power2=parse_power(formula,head,false)){
-					auto [t2,h2]=*power2;
-					head=h2;
-					ret={Equation::Op_node({'*',{ret},{t2}})};
+					head=power2[0].head;
+					ret={Equation::Op_node({'*',{ret},{power2[0].eq}})};
 				}else
 					return {{ret,head}};
 		}
