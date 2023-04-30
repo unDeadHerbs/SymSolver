@@ -67,8 +67,7 @@ Parser(number){
 	}
 }
 
-auto parse_latex_basic(string const& formula,size_t head,bool allow_unary_minus)
-	->std::optional<std::pair<std::string,size_t>>{
+vPS parse_latex_basic(string const& formula,size_t head,bool allow_unary_minus){
 	DB(__func__ << ": " << formula.substr(0,head)<<" || "<<formula.substr(head));
 	unused(allow_unary_minus);
 	if(head>=formula.size()) return {};
@@ -83,15 +82,15 @@ auto parse_latex_basic(string const& formula,size_t head,bool allow_unary_minus)
 		}
 		ret += formula[head++];
 		DB("parse_latex_basic: "<<ret);
-		return {{ret,head}};
+		return {{{Equation::Variable({ret}),head}}};
 	}
 	if(auto on=parse_number(formula,head,false)){
 		// Just grabbing the length.
 		DB("parse_latex_basic:" <<on[0].eq);
-		return {{formula.substr(head,on[0].head),on[0].head}};
+		return {{{Equation::Variable({formula.substr(head,on[0].head)}),on[0].head}}};
 	}
 	std::cerr <<"Warning: LaTeX group requested but not found, using one char." << std::endl;
-	return {{{formula[head]},head+1}};
+	return {{{{Equation::Variable({string({formula[head]})})},head+1}}};
 }
 
 auto parse_variable(string const& formula,size_t head,bool allow_leading_unary)
@@ -107,9 +106,8 @@ auto parse_variable(string const& formula,size_t head,bool allow_leading_unary)
 		if(head<formula.size() && formula[head]=='_'){
 			var+=formula[head++];
 			if(auto nxt=parse_latex_basic(formula,head,allow_leading_unary)){
-				auto [s,h]=*nxt;
-				var+=s;
-				head=h;
+				var+=std::get<Equation::Variable>(nxt[0].eq.value).name;
+				head=nxt[0].head;
 			}else{
 				std::cerr <<"Error: Variable LaTeX subscript requested but missing." << std::endl;
 				return {};
