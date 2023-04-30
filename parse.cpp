@@ -21,26 +21,26 @@ struct ParserState{
 
 struct vPS{
 	std::vector<ParserState> PSs;
-	operator bool()const{return PSs.size();}
+	operator bool()const{return PSs.size();} // TODO: Remove for for_each.
 	template<typename T>
-	auto operator[](T rhs)const{return PSs[rhs];}
+	auto& operator[](T rhs){return PSs[rhs];} // TODO: Remove for for_each.
 	auto push_back(ParserState rhs){return PSs.push_back(rhs);}
 };
 
 #define unused(X) (void)X
-#define Return(EQ,H) ret.push_back({EQ,H})
+#define Return(EQ,H) _ret.push_back({EQ,H})
 #define Parser(NAME)																										\
 	struct parse_##NAME##_helper{																					\
-		vPS ret;																														\
+		vPS _ret;																														\
 		void internal(string const&,size_t,bool);														\
 	};																																		\
-	vPS parse_number																											\
+	vPS parse_##NAME																											\
 	(string const& formula,size_t head,bool allow_unary_minus){						\
 		DB(__func__ << ": " <<																							\
 			 formula.substr(0,head)<<" || "<<formula.substr(head));						\
-		parse_number_helper h;																							\
+		parse_##NAME##_helper h;																						\
 		h.internal(formula,head,allow_unary_minus);													\
-		return h.ret;																												\
+		return h._ret;																											\
 	}																																			\
 	void parse_##NAME##_helper::internal																	\
 	(string const& formula,size_t head,bool allow_unary_minus)
@@ -67,30 +67,29 @@ Parser(number){
 	}
 }
 
-vPS parse_latex_basic(string const& formula,size_t head,bool allow_unary_minus){
-	DB(__func__ << ": " << formula.substr(0,head)<<" || "<<formula.substr(head));
+Parser(latex_basic){
 	unused(allow_unary_minus);
-	if(head>=formula.size()) return {};
+	if(head>=formula.size()) return;
 	if(formula[head]=='{'){
 		std::string ret({formula[head++]});
 		while(formula[head]!='}'){ // TODO: Use std::find and substr
 			if(head>=formula.size()){
 				std::cerr <<"Error: LaTeX group started but not ended." << std::endl;
-				return {};
+				return;
 			}
 			ret += formula[head++];
 		}
 		ret += formula[head++];
-		DB("parse_latex_basic: "<<ret);
-		return {{{Equation::Variable({ret}),head}}};
+		Return(Equation::Variable({ret}),head);
 	}
 	if(auto on=parse_number(formula,head,false)){
 		// Just grabbing the length.
 		DB("parse_latex_basic:" <<on[0].eq);
-		return {{{Equation::Variable({formula.substr(head,on[0].head)}),on[0].head}}};
+		Return(Equation::Variable({formula.substr(head,on[0].head)}),on[0].head);
+	}else if(formula[head]!='{'){
+		std::cerr <<"Warning: LaTeX group requested but not found, using one char." << std::endl;
+		Return(Equation::Variable({string({formula[head]})}),head+1);
 	}
-	std::cerr <<"Warning: LaTeX group requested but not found, using one char." << std::endl;
-	return {{{{Equation::Variable({string({formula[head]})})},head+1}}};
 }
 
 auto parse_variable(string const& formula,size_t head,bool allow_leading_unary)
