@@ -175,16 +175,14 @@ Parser(named_operator){
 			Return(Equation::F_node({"\\tan",{b}}),h2);}}
 }
 
-auto parse_constant(string const& formula,size_t head)
-	->std::optional<std::pair<Equation,size_t>>{
-	DB(__func__ << ": " << formula.substr(0,head)<<" || "<<formula.substr(head));
+Parser(constant){
+	unused(allow_leading_unary);
 	if(formula.substr(head).starts_with("\\pi"))
-		return {{{Equation::Constant({"pi"})},head+3}};
+		Return(Equation::Constant({"pi"}),head+3);
 	if(formula.substr(head).starts_with("\\phi"))
-		return {{{Equation::Constant({"phi"})},head+4}};
+		Return(Equation::Constant({"phi"}),head+4);
 	if(formula.substr(head).starts_with("i"))
-		return {{{Equation::Constant({"i"})},head+1}};
-	return {};
+		Return(Equation::Constant({"i"}),head+1);
 }
 
 auto parse_term(string const& formula,size_t head,bool allow_leading_unary)
@@ -195,8 +193,8 @@ auto parse_term(string const& formula,size_t head,bool allow_leading_unary)
 		return par;
 	if(auto num=parse_number(formula,head,allow_leading_unary))
 		return {{num[0].eq,num[0].head}};
-	if(auto cnst=parse_constant(formula,head))
-		return cnst;
+	if(auto cnst=parse_constant(formula,head,allow_leading_unary))
+		return {{cnst[0].eq,cnst[0].head}};
 	if(auto var=parse_variable(formula,head,allow_leading_unary))
 		return {{var[0].eq,var[0].head}};
 	if(auto func=parse_named_operator(formula,head,allow_leading_unary))
