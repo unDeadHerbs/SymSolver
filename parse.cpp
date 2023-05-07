@@ -56,8 +56,6 @@ Parser(number){
 		std::istringstream buf(formula.substr(head));
 		double v;
 		buf >> v;
-		//std::cerr<<"[NUMBER] val = "<<v<<std::endl;
-		//std::cerr<<"[NUMBER] tellg = "<<buf.tellg()<<std::endl;
 		if(buf.tellg()==-1)
 			Return(v,formula.size());
 		else
