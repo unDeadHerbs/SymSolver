@@ -692,3 +692,46 @@ i
 #+BEGIN_SRC scheme :tangle tests.d/00002023-parser-tan.output
 \tan{3}
 #+END_SRC
+** Ignore Spaces
+*** 00002024 - Spaces in Addition
+#+BEGIN_SRC scheme :tangle tests.d/00002024-parser-spaces_addition.input
+1 + 2
+#+END_SRC
+#+BEGIN_SRC scheme :tangle tests.d/00002024-parser-spaces_addition.output
+1+2
+#+END_SRC
+*** 00002025 - Spaces in Multiplication
+#+BEGIN_SRC scheme :tangle tests.d/00002025-parser-spaces_multiplication.input
+1 * 2
+#+END_SRC
+#+BEGIN_SRC scheme :tangle tests.d/00002025-parser-spaces_multiplication.output
+1*2
+#+END_SRC
+*** 00002026 - Spaces in Implicit Multiplication
+#+BEGIN_SRC scheme :tangle tests.d/00002026-parser-spaces_multiplication_implicit.input
+2 x
+#+END_SRC
+#+BEGIN_SRC scheme :tangle tests.d/00002026-parser-spaces_multiplication_implicit.output
+2*x
+#+END_SRC
+*** 00002027 - Spaces Before Expression
+#+BEGIN_SRC scheme :tangle tests.d/00002027-parser-spaces_before_expresion.input
+ 3+2
+#+END_SRC
+#+BEGIN_SRC scheme :tangle tests.d/00002027-parser-spaces_before_expresion.output
+3+2
+#+END_SRC
+*** 00002028 - Spaces Around Parenthesis
+#+BEGIN_SRC scheme :tangle tests.d/00002028-parser-spaces_parentheses.input
+3+ ( 2*5 ) +2
+#+END_SRC
+#+BEGIN_SRC scheme :tangle tests.d/00002028-parser-spaces_parentheses.output
+3+2*5+2
+#+END_SRC
+*** 00002029 - Spaces as Function Application
+#+BEGIN_SRC scheme :tangle tests.d/00002029-parser-spaces_function.input
+\ln 3
+#+END_SRC
+#+BEGIN_SRC scheme :tangle tests.d/00002029-parser-spaces_function.output
+\ln{3}
+#+END_SRC
