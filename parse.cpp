@@ -2,12 +2,15 @@
 #include <optional>
 #include <iostream> // for std::cerr
 #include <sstream>
+#include <functional>
 
 //#define DEBUG 1
 #ifdef DEBUG
 #define DB(X) do{std::cerr<<X<<std::endl;}while(0)
+#define DBv(X) do{for(auto& v:X) DB(" - "<<v.eq);}while(0)
 #else
 #define DB(X) do{}while(0)
+#define DBv(X) do{}while(0)
 #endif
 
 using std::string;
@@ -19,13 +22,7 @@ struct ParserState{
 	size_t head;
 };
 
-struct vPS{
-	std::vector<ParserState> PSs;
-	operator bool()const{return PSs.size();} // TODO: Remove for for_each.
-	template<typename T>
-	auto& operator[](T rhs){return PSs[rhs];} // TODO: Remove for for_each.
-	auto push_back(ParserState rhs){return PSs.push_back(rhs);}
-};
+typedef std::vector<ParserState> vPS;
 
 #define unused(X) (void)X
 #define Return(EQ,H) _ret.push_back({EQ,H})
@@ -36,10 +33,12 @@ struct vPS{
 	};																																		\
 	vPS parse_##NAME																											\
 	(string const& formula,size_t head,bool allow_leading_unary){					\
-		DB(__func__ << ": " <<																							\
+		DB("Entering "<<__func__ << ": " <<																	\
 			 formula.substr(0,head)<<" || "<<formula.substr(head));						\
 		parse_##NAME##_helper h;																						\
 		h.internal(formula,head,allow_leading_unary);												\
+		DB(" Leaving " << __func__ << ": "<<h._ret.size());									\
+		DBv(h._ret);																												\
 		return h._ret;																											\
 	}																																			\
 	void parse_##NAME##_helper::internal																	\
@@ -59,7 +58,6 @@ Parser(number){
 		buf >> v;
 		//std::cerr<<"[NUMBER] val = "<<v<<std::endl;
 		//std::cerr<<"[NUMBER] tellg = "<<buf.tellg()<<std::endl;
-		DB("parse_number: " << v );
 		if(buf.tellg()==-1)
 			Return(v,formula.size());
 		else
@@ -82,11 +80,10 @@ Parser(latex_basic){
 		ret += formula[head++];
 		Return(Equation::Variable({ret}),head);
 	}
-	if(auto on=parse_number(formula,head,false)){
+	for(auto& on:parse_number(formula,head,false))
 		// Just grabbing the length.
-		DB("parse_latex_basic:" <<on[0].eq);
-		Return(Equation::Variable({formula.substr(head,on[0].head)}),on[0].head);
-	}else if(formula[head]!='{'){
+		Return(Equation::Variable({formula.substr(head,on.head)}),on.head);
+	if(_ret.size()==0 && formula[head]!='{'){ // TODO: Don't touch the internals.
 		std::cerr <<"Warning: LaTeX group requested but not found, using one char." << std::endl;
 		Return(Equation::Variable({string({formula[head]})}),head+1);
 	}
@@ -94,24 +91,17 @@ Parser(latex_basic){
 
 Parser(variable){
 	if(allow_leading_unary && head<formula.size() && formula[head]=='-')
-		if(auto var=parse_variable(formula,head+1,false))
-			Return(Equation({Equation::Operator::MULTIPLY,Equation(-1),var[0].eq}),var[0].head);
+		for(auto var:parse_variable(formula,head+1,false))
+			Return(Equation({Equation::Operator::MULTIPLY,Equation(-1),var.eq}),var.head);
 	if(head<formula.size() && std::isalpha(formula[head])){
 		std::string var({formula[head++]});
-		if(head<formula.size() && formula[head]=='_'){
-			var+=formula[head++];
-			if(auto nxt=parse_latex_basic(formula,head,allow_leading_unary)){
-				var+=std::get<Equation::Variable>(nxt[0].eq.value).name;
-				head=nxt[0].head;
-			}else{
-				std::cerr <<"Error: Variable LaTeX subscript requested but missing." << std::endl;
-				return;
+		if(head<formula.size() && formula[head]=='_')
+			for(auto nxt:parse_latex_basic(formula,head+1,allow_leading_unary)){
+				auto var2=var+"_"+std::get<Equation::Variable>(nxt.eq.value).name;
+				Return({Equation::Variable({var2})},nxt.head);
 			}
-		}
-		if(var=="i") // The imaginary unit isn't a variable.
-			return;
-		DB("parse_variable: " <<var);
-		Return({Equation::Variable({var})},head);
+		if(var!="i") // The imaginary unit isn't a variable.
+		  Return({Equation::Variable({var})},head);
 	}
 }
 
@@ -126,42 +116,42 @@ Parser(named_operator){
 	// Basic Functions
 	if(formula.substr(head).starts_with("\\sqrt")){
 		auto h=head+5;
-		if(auto tmplte=parse_bracketed(formula,h,true))
-			if(auto body=parse_braces(formula,tmplte[0].head,true))
-				Return(Equation::F_node({"\\sqrt",{tmplte[0].eq},{body[0].eq}}),body[0].head);
-		if(auto body=parse_braces(formula,h,true))
-			Return(Equation::F_node({"\\sqrt",{body[0].eq}}),body[0].head);}
+		for(auto tmplte:parse_bracketed(formula,h,true))
+			for(auto body:parse_braces(formula,tmplte.head,true))
+				Return(Equation::F_node({"\\sqrt",{tmplte.eq},{body.eq}}),body.head);
+		for(auto body:parse_braces(formula,h,true))
+			Return(Equation::F_node({"\\sqrt",{body.eq}}),body.head);}
 	if(formula.substr(head).starts_with("\\ln")){
 		auto h=head+3;
-		if(auto body=parse_braces(formula,h,true))
-			Return(Equation::F_node({"\\ln",{body[0].eq}}),body[0].head);}
+		for(auto body:parse_braces(formula,h,true))
+			Return(Equation::F_node({"\\ln",{body.eq}}),body.head);}
 	if(formula.substr(head).starts_with("\\log")){
 		auto h=head+4;
 		if(h<formula.size() && formula[h]=='_'){
 			auto h2=h+1;
-			if(auto base=parse_term(formula,h2,false))
-				if(auto body=parse_braces(formula,base[0].head,true))
-					Return(Equation::F_node({{{base[0].eq},{}},"\\log",{body[0].eq}}),body[0].head);}
-		if(auto body=parse_braces(formula,h,true))
-			Return(Equation::F_node({"\\log",{body[0].eq}}),body[0].head);}
+			for(auto base:parse_term(formula,h2,false))
+				for(auto body:parse_braces(formula,base.head,true))
+					Return(Equation::F_node({{{base.eq},{}},"\\log",{body.eq}}),body.head);}
+		for(auto body:parse_braces(formula,h,true))
+			Return(Equation::F_node({"\\log",{body.eq}}),body.head);}
 
 	// Trig Functions
 	if(formula.substr(head).starts_with("\\exp")){
 		auto h=head+4;
-		if(auto body=parse_braces(formula,h,true))
-			Return(Equation::F_node({"\\exp",{body[0].eq}}),body[0].head);}
+		for(auto body:parse_braces(formula,h,true))
+			Return(Equation::F_node({"\\exp",{body.eq}}),body.head);}
 	if(formula.substr(head).starts_with("\\sin")){
 		auto h=head+4;
-		if(auto body=parse_braces(formula,h,true))
-			Return(Equation::F_node({"\\sin",{body[0].eq}}),body[0].head);}
+		for(auto body:parse_braces(formula,h,true))
+			Return(Equation::F_node({"\\sin",{body.eq}}),body.head);}
 	if(formula.substr(head).starts_with("\\cos")){
 		auto h=head+4;
-		if(auto body=parse_braces(formula,h,true))
-			Return(Equation::F_node({"\\cos",{body[0].eq}}),body[0].head);}
+		for(auto body:parse_braces(formula,h,true))
+			Return(Equation::F_node({"\\cos",{body.eq}}),body.head);}
 	if(formula.substr(head).starts_with("\\tan")){
 		auto h=head+4;
-		if(auto body=parse_braces(formula,h,true))
-			Return(Equation::F_node({"\\tan",{body[0].eq}}),body[0].head);}
+		for(auto body:parse_braces(formula,h,true))
+			Return(Equation::F_node({"\\tan",{body.eq}}),body.head);}
 }
 
 Parser(constant){
@@ -176,78 +166,81 @@ Parser(constant){
 
 Parser(term){
 	// parenthesized | number | constant | variable | named_operator
-	if(auto par=parse_parenthetical(formula,head,true))
-		Return(par[0].eq,par[0].head);
-	if(auto num=parse_number(formula,head,allow_leading_unary))
-		Return(num[0].eq,num[0].head);
-	if(auto cnst=parse_constant(formula,head,allow_leading_unary))
-		Return(cnst[0].eq,cnst[0].head);
-	if(auto var=parse_variable(formula,head,allow_leading_unary))
-		Return(var[0].eq,var[0].head);
-	if(auto func=parse_named_operator(formula,head,allow_leading_unary))
-		Return(func[0].eq,func[0].head);
+	for(auto par:parse_parenthetical(formula,head,true))
+		Return(par.eq,par.head);
+	for(auto num:parse_number(formula,head,allow_leading_unary))
+		Return(num.eq,num.head);
+	for(auto cnst:parse_constant(formula,head,allow_leading_unary))
+		Return(cnst.eq,cnst.head);
+	for(auto var:parse_variable(formula,head,allow_leading_unary))
+		Return(var.eq,var.head);
+	for(auto func:parse_named_operator(formula,head,allow_leading_unary))
+		Return(func.eq,func.head);
 }
 
 Parser(power){
-	if(auto term=parse_term(formula,head,allow_leading_unary)){
-		if(term[0].head<formula.size() && formula[term[0].head]=='^')
-			if(auto exp=parse_power(formula,term[0].head+1,true))
-				Return(Equation::Op_node({'^',term[0].eq,exp[0].eq}),exp[0].head);
-		Return(term[0].eq,term[0].head);
+	for(auto term:parse_term(formula,head,allow_leading_unary)){
+		if(term.head<formula.size() && formula[term.head]=='^')
+			for(auto exp:parse_power(formula,term.head+1,true))
+				Return(Equation::Op_node({'^',term.eq,exp.eq}),exp.head);
+		Return(term.eq,term.head);
 	}
 }
 
 Parser(product){
+	std::function<vPS(ParserState)> helper=[&](ParserState ps)->vPS{
+		// (('*'?|'/')+power)*
+
+		// Builds tree from left so that division doesn't invert everything.
+		vPS ret;
+		ret.push_back(ps);
+	  if(ps.head>=formula.size()) return ret;
+		if(formula[ps.head]=='*' || formula[ps.head]=='/'){
+			auto op=formula[ps.head];
+			for(auto power:parse_power(formula,ps.head+1,true)){
+					Equation t={Equation::Op_node({op,{ps.eq},{power.eq}})};
+					for(auto r:helper(ParserState({t,power.head})))
+						ret.push_back(r);
+			}}
+		for(auto power:parse_power(formula,ps.head,true)){
+			Equation t={Equation::Op_node({'*',{ps.eq},{power.eq}})};
+			for(auto r:helper(ParserState({t,power.head})))
+				ret.push_back(r);}
+		return ret;
+	};
 	// power+(('*'?|'/')+power)*
-	if(auto power=parse_power(formula,head,allow_leading_unary)){
-		head=power[0].head;
-		auto ret=power[0].eq;
-		while(head<formula.size()){
-			if(formula[head]=='*' || formula[head]=='/'){
-				auto op=formula[head++];
-				if(auto power2=parse_power(formula,head,true)){
-					head=power2[0].head;
-					ret={Equation::Op_node({op,{ret},{power2[0].eq}})};
-				}else{
-					std::cerr <<"Error: Back track in parse_product."<<std::endl;
-					Return(ret,head-1);
-				}
-			}else if(auto power2=parse_power(formula,head,false)){
-				head=power2[0].head;
-				ret={Equation::Op_node({'*',{ret},{power2[0].eq}})};
-			}else
-				break;
-		}
-		Return(ret,head);
-	}
+	for(auto power:parse_power(formula,head,allow_leading_unary))
+		for(auto rest:helper(power))
+			Return(rest.eq,rest.head);
 }
 
 Parser(sum){
+	std::function<vPS(ParserState)> helper=[&](ParserState ps)->vPS{
+		// ([+-]+product)*
+
+		// Builds tree from left so that division doesn't invert everything.
+		vPS ret;
+		ret.push_back(ps);
+	  if(ps.head>=formula.size()) return ret;
+		if(formula[ps.head]=='+' || formula[ps.head]=='-'){
+			auto op=formula[ps.head];
+			for(auto product:parse_product(formula,ps.head+1,true)){
+					Equation t={Equation::Op_node({op,{ps.eq},{product.eq}})};
+					for(auto r:helper(ParserState({t,product.head})))
+						ret.push_back(r);
+			}}
+		return ret;
+	};
 	// product+([+-]+product)*
-	if(auto term=parse_product(formula,head,allow_leading_unary)){
-		head=term[0].head;
-		auto ret=term[0].eq;
-		while(head<formula.size()){
-			if(formula[head]=='+' || formula[head]=='-'){
-				auto op=formula[head++];
-				if(auto term2=parse_product(formula,head,true)){
-					head=term2[0].head;
-					ret={Equation::Op_node({op,{ret},{term2[0].eq}})};
-				}else{
-					std::cerr <<"Error: Back track in parse_sum."<<std::endl;
-					Return(ret,head-1);
-				}
-			}else
-				break;
-		}
-		Return(ret,head);
-	}
+	for(auto product:parse_product(formula,head,allow_leading_unary))
+		for(auto rest:helper(product))
+			Return(rest.eq,rest.head);
 }
 
 Parser(expression){
 	// good enough for now
-	if(auto sum=parse_sum(formula,head,allow_leading_unary))
-		Return(sum[0].eq,sum[0].head);
+	for(auto sum:parse_sum(formula,head,allow_leading_unary))
+		Return(sum.eq,sum.head);
 }
 
 Parser(braces){
@@ -255,11 +248,11 @@ Parser(braces){
 	unused(allow_leading_unary);
 	if(head>=formula.size()) return;
 	if(formula[head++]!='{') return;
-	if(auto eq=parse_expression(formula,head,true)){
-		head=eq[0].head;
-		if(head>=formula.size()) return;
-		if(formula[head++]!='}') return;
-		Return(eq[0].eq,head);
+	for(auto eq:parse_expression(formula,head,true)){
+		auto h=eq.head;
+		if(h>=formula.size()) continue;
+		if(formula[h]!='}') continue;
+		Return(eq.eq,h+1);
 	}
 }
 
@@ -268,11 +261,11 @@ Parser(bracketed){
 	unused(allow_leading_unary);
 	if(head>=formula.size()) return;
 	if(formula[head++]!='[') return;
-	if(auto eq=parse_expression(formula,head,true)){
-		head=eq[0].head;
-		if(head>=formula.size()) return;
-		if(formula[head++]!=']') return;
-		Return(eq[0].eq,head);
+	for(auto eq:parse_expression(formula,head,true)){
+		auto h=eq.head;
+		if(h>=formula.size()) continue;
+		if(formula[h]!=']') continue;
+		Return(eq.eq,h+1);
 	}
 }
 
@@ -282,17 +275,17 @@ Parser(parenthetical){
 	unused(allow_leading_unary);
 	if(head>=formula.size()) return;
 	if(formula[head++]!='(') return;
-	if(auto eq=parse_expression(formula,head,true)){
-		head=eq[0].head;
-		if(head>=formula.size()) return;
-		if(formula[head++]!=')') return;
-		Return(eq[0].eq,head);
+	for(auto eq:parse_expression(formula,head,true)){
+		auto h=eq.head;
+		if(h>=formula.size()) continue;
+		if(formula[h]!=')') continue;
+		Return(eq.eq,h+1);
 	}
 }
 
 Equation parse_formula(string const& formula) {
-	if(auto eq= parse_expression(formula,0,true))
-		if(eq[0].head == formula.size())
-			return eq[0].eq;
+	for(auto eq: parse_expression(formula,0,true))
+		if(eq.head == formula.size())
+			return eq.eq;
 	throw "Unable to Parse";
 }
