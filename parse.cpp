@@ -3,6 +3,7 @@
 #include <iostream> // for std::cerr
 #include <sstream>
 #include <functional>
+#include <cstring>
 
 //#define DEBUG 1
 #ifdef DEBUG
@@ -46,6 +47,19 @@ typedef std::vector<ParserState> vPS;
 
 #define consume_spaces(H) do{while(formula.size()>H && formula[H]==' ')H++;}while(0)
 
+template<char C>
+std::optional<size_t> parse_sym(string const& formula,size_t head,bool consume_white_space=true){
+	if(consume_white_space) consume_spaces(head);
+	if(head>=formula.size()) return {};
+	if(formula[head]==C) return head+1;
+	return {};}
+
+std::optional<size_t> parse_sym(string const sym, string const& formula,size_t head,bool consume_white_space=true){
+	if(consume_white_space) consume_spaces(head);
+	if(head>=formula.size()) return {};
+	if(formula.substr(head).starts_with(sym)) return head+sym.size();
+	return {};}
+
 Parser(number){
 	consume_spaces(head);
 	if(allow_leading_unary)
@@ -69,18 +83,17 @@ Parser(number){
 Parser(latex_basic){
 	consume_spaces(head);
 	unused(allow_leading_unary);
-	if(head>=formula.size()) return;
-	if(formula[head]=='{'){
-		std::string ret({formula[head++]});
-		while(formula[head]!='}'){ // TODO: Use std::find and substr
-			if(head>=formula.size()){
+	if(auto h=parse_sym<'{'>(formula,head)){
+		std::string ret({'{'});
+		while(formula[*h]!='}'){ // TODO: Use std::find and substr
+			if(*h>=formula.size()){
 				std::cerr <<"Error: LaTeX group started but not ended." << std::endl;
 				return;
 			}
-			ret += formula[head++];
+			ret += formula[(*h)++];
 		}
-		ret += formula[head++];
-		Return(Equation::Variable({ret}),head);
+		ret += formula[(*h)++];
+		Return(Equation::Variable({ret}),*h);
 	}
 	for(auto& on:parse_number(formula,head,false))
 		// Just grabbing the length.
@@ -93,13 +106,14 @@ Parser(latex_basic){
 
 Parser(variable){
 	consume_spaces(head);
-	if(allow_leading_unary && head<formula.size() && formula[head]=='-')
-		for(auto var:parse_variable(formula,head+1,false))
-			Return(Equation({Equation::Operator::MULTIPLY,Equation(-1),var.eq}),var.head);
+	if(allow_leading_unary)
+		if(auto h=parse_sym<'-'>(formula,head))
+			for(auto var:parse_variable(formula,*h,false))
+				Return(Equation({Equation::Operator::MULTIPLY,Equation(-1),var.eq}),var.head);
 	if(head<formula.size() && std::isalpha(formula[head])){
 		std::string var({formula[head++]});
-		if(head<formula.size() && formula[head]=='_')
-			for(auto nxt:parse_latex_basic(formula,head+1,allow_leading_unary)){
+		if(auto under=parse_sym<'_'>(formula,head))
+			for(auto nxt:parse_latex_basic(formula,*under,allow_leading_unary)){
 				auto var2=var+"_"+std::get<Equation::Variable>(nxt.eq.value).name;
 				Return({Equation::Variable({var2})},nxt.head);
 			}
@@ -128,55 +142,46 @@ Parser(named_operator){
 	consume_spaces(head);
 	unused(allow_leading_unary);
 	// Basic Functions
-	if(formula.substr(head).starts_with("\\sqrt")){
-		auto h=head+5;
-		for(auto tmplte:parse_bracketed(formula,h,true))
+	if(auto h=parse_sym("\\sqrt",formula,head)){
+		for(auto tmplte:parse_bracketed(formula,*h,true))
 			for(auto body:parse_space_term_or_brace(formula,tmplte.head,true))
 				Return(Equation::F_node({"\\sqrt",{tmplte.eq},{body.eq}}),body.head);
-		for(auto body:parse_space_term_or_brace(formula,h,true))
+		for(auto body:parse_space_term_or_brace(formula,*h,true))
 			Return(Equation::F_node({"\\sqrt",{body.eq}}),body.head);}
-	if(formula.substr(head).starts_with("\\ln")){
-		auto h=head+3;
-		for(auto body:parse_space_term_or_brace(formula,h,true))
-			Return(Equation::F_node({"\\ln",{body.eq}}),body.head);}
-	if(formula.substr(head).starts_with("\\log")){
-		auto h=head+4;
-		if(h<formula.size() && formula[h]=='_'){
-			auto h2=h+1;
-			for(auto base:parse_term(formula,h2,false))
+	if(auto h=parse_sym("\\ln",formula,head))
+		for(auto body:parse_space_term_or_brace(formula,*h,true))
+			Return(Equation::F_node({"\\ln",{body.eq}}),body.head);
+	if(auto h=parse_sym("\\log",formula,head)){
+		if(auto h2=parse_sym<'_'>(formula,*h)){
+			for(auto base:parse_term(formula,*h2,false))
 				for(auto body:parse_space_term_or_brace(formula,base.head,true))
 					Return(Equation::F_node({{{base.eq},{}},"\\log",{body.eq}}),body.head);}
-		for(auto body:parse_space_term_or_brace(formula,h,true))
+		for(auto body:parse_space_term_or_brace(formula,*h,true))
 			Return(Equation::F_node({"\\log",{body.eq}}),body.head);}
 
 	// Trig Functions
-	if(formula.substr(head).starts_with("\\exp")){
-		auto h=head+4;
-		for(auto body:parse_space_term_or_brace(formula,h,true))
-			Return(Equation::F_node({"\\exp",{body.eq}}),body.head);}
-	if(formula.substr(head).starts_with("\\sin")){
-		auto h=head+4;
-		for(auto body:parse_space_term_or_brace(formula,h,true))
-			Return(Equation::F_node({"\\sin",{body.eq}}),body.head);}
-	if(formula.substr(head).starts_with("\\cos")){
-		auto h=head+4;
-		for(auto body:parse_space_term_or_brace(formula,h,true))
-			Return(Equation::F_node({"\\cos",{body.eq}}),body.head);}
-	if(formula.substr(head).starts_with("\\tan")){
-		auto h=head+4;
-		for(auto body:parse_space_term_or_brace(formula,h,true))
-			Return(Equation::F_node({"\\tan",{body.eq}}),body.head);}
+	if(auto h=parse_sym("\\exp",formula,head))
+		for(auto body:parse_space_term_or_brace(formula,*h,true))
+			Return(Equation::F_node({"\\exp",{body.eq}}),body.head);
+	if(auto h=parse_sym("\\sin",formula,head))
+		for(auto body:parse_space_term_or_brace(formula,*h,true))
+			Return(Equation::F_node({"\\sin",{body.eq}}),body.head);
+	if(auto h=parse_sym("\\cos",formula,head))
+		for(auto body:parse_space_term_or_brace(formula,*h,true))
+			Return(Equation::F_node({"\\cos",{body.eq}}),body.head);
+	if(auto h=parse_sym("\\tan",formula,head))
+		for(auto body:parse_space_term_or_brace(formula,*h,true))
+			Return(Equation::F_node({"\\tan",{body.eq}}),body.head);
 }
 
 Parser(constant){
-	consume_spaces(head);
 	unused(allow_leading_unary);
-	if(formula.substr(head).starts_with("\\pi"))
-		Return(Equation::Constant({"pi"}),head+3);
-	if(formula.substr(head).starts_with("\\phi"))
-		Return(Equation::Constant({"phi"}),head+4);
-	if(formula.substr(head).starts_with("i"))
-		Return(Equation::Constant({"i"}),head+1);
+	if(auto h=parse_sym("\\pi",formula,head))
+		Return(Equation::Constant({"pi"}),*h);
+	if(auto h=parse_sym("\\phi",formula,head))
+		Return(Equation::Constant({"phi"}),*h);
+	if(auto h=parse_sym("i",formula,head))
+		Return(Equation::Constant({"i"}),*h);
 }
 
 Parser(term){
@@ -197,8 +202,8 @@ Parser(term){
 Parser(power){
 	for(auto term:parse_term(formula,head,allow_leading_unary)){
 		consume_spaces(term.head);
-		if(term.head<formula.size() && formula[term.head]=='^')
-			for(auto exp:parse_power(formula,term.head+1,true))
+		if(auto h=parse_sym<'^'>(formula,term.head))
+			for(auto exp:parse_power(formula,*h,true))
 				Return(Equation::Op_node({'^',term.eq,exp.eq}),exp.head);
 		Return(term.eq,term.head);
 	}
@@ -211,9 +216,8 @@ Parser(product){
 		// Builds tree from left so that division doesn't invert everything.
 		vPS ret;
 		ret.push_back(ps);
-		consume_spaces(ps.head);
-	  if(ps.head>=formula.size()) return ret;
-		if(formula[ps.head]=='*' || formula[ps.head]=='/'){
+		if(parse_sym<'*'>(formula,ps.head) || parse_sym<'/'>(formula,ps.head)){
+			// TODO: This should be a vPS by joining and looping.
 			auto op=formula[ps.head];
 			for(auto power:parse_power(formula,ps.head+1,true)){
 					Equation t={Equation::Op_node({op,{ps.eq},{power.eq}})};
@@ -239,9 +243,7 @@ Parser(sum){
 		// Builds tree from left so that division doesn't invert everything.
 		vPS ret;
 		ret.push_back(ps);
-		consume_spaces(ps.head);
-	  if(ps.head>=formula.size()) return ret;
-		if(formula[ps.head]=='+' || formula[ps.head]=='-'){
+		if(parse_sym<'+'>(formula,ps.head) || parse_sym<'-'>(formula,ps.head)){
 			auto op=formula[ps.head];
 			for(auto product:parse_product(formula,ps.head+1,true)){
 					Equation t={Equation::Op_node({op,{ps.eq},{product.eq}})};
@@ -265,48 +267,27 @@ Parser(expression){
 Parser(braces){
 	// '{'+expression+'}'
 	unused(allow_leading_unary);
-	consume_spaces(head);
-	if(head>=formula.size()) return;
-	if(formula[head++]!='{') return;
-	for(auto eq:parse_expression(formula,head,true)){
-		auto h=eq.head;
-		consume_spaces(h);
-		if(h>=formula.size()) continue;
-		if(formula[h]!='}') continue;
-		Return(eq.eq,h+1);
-	}
-}
+	if(auto h=parse_sym<'{'>(formula,head))
+		for(auto eq:parse_expression(formula,*h,true))
+			if(auto h2=parse_sym<'}'>(formula,eq.head))
+				Return(eq.eq,*h2);}
 
 Parser(bracketed){
 	// '['+expression+']'
 	unused(allow_leading_unary);
-	consume_spaces(head);
-	if(head>=formula.size()) return;
-	if(formula[head++]!='[') return;
-	for(auto eq:parse_expression(formula,head,true)){
-		auto h=eq.head;
-		consume_spaces(h);
-		if(h>=formula.size()) continue;
-		if(formula[h]!=']') continue;
-		Return(eq.eq,h+1);
-	}
-}
+	if(auto h=parse_sym<'['>(formula,head))
+		for(auto eq:parse_expression(formula,*h,true))
+			if(auto h2=parse_sym<']'>(formula,eq.head))
+				Return(eq.eq,*h2);}
 
 
 Parser(parenthetical){
 	// '('+expression+')'
 	unused(allow_leading_unary);
-	consume_spaces(head);
-	if(head>=formula.size()) return;
-	if(formula[head++]!='(') return;
-	for(auto eq:parse_expression(formula,head,true)){
-		auto h=eq.head;
-		consume_spaces(h);
-		if(h>=formula.size()) continue;
-		if(formula[h]!=')') continue;
-		Return(eq.eq,h+1);
-	}
-}
+	if(auto h=parse_sym<'('>(formula,head))
+		for(auto eq:parse_expression(formula,*h,true))
+			if(auto h2=parse_sym<')'>(formula,eq.head))
+				Return(eq.eq,*h2);}
 
 Equation parse_formula(string const& formula) {
 	for(auto eq: parse_expression(formula,0,true))
