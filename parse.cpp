@@ -29,17 +29,22 @@ struct SimpleParserState{
 };
 
 typedef std::vector<ParserState> vPS;
+vPS& operator+=(vPS& lhs,vPS rhs){for(auto e:rhs)lhs.push_back(e);return lhs;} // TODO: Ranges V3
+vPS operator+(vPS lhs,vPS rhs){for(auto e:rhs)lhs.push_back(e);return lhs;} // TODO: Ranges V3
 typedef std::vector<SimpleParserState> vSPS;
 vSPS operator+(vSPS lhs,vSPS rhs){for(auto e:rhs)lhs.push_back(e);return lhs;} // TODO: Ranges V3
 
 #define unused(X) (void)X
 #define Return(EQ,H) _ret.push_back({EQ,H})
-#define Parser(NAME)																										\
+#define ReturnV(VPS) _ret+=VPS
+class Parser{};
+#define Parser_Proto(NAME)																							\
 	struct parse_##NAME##_helper{																					\
 		vPS _ret;																														\
 		void internal(string const&,size_t,bool);														\
 	};																																		\
-	vPS parse_##NAME																											\
+	struct Parser_##NAME : Parser{																				\
+	vPS operator()																												\
 	(string const& formula,size_t head,bool allow_leading_unary){					\
 		DB("Entering "<<__func__ << ": " <<																	\
 			 formula.substr(0,head)<<" || "<<formula.substr(head));						\
@@ -48,9 +53,11 @@ vSPS operator+(vSPS lhs,vSPS rhs){for(auto e:rhs)lhs.push_back(e);return lhs;} /
 		DB(" Leaving " << __func__ << ": "<<h._ret.size());									\
 		DBv(h._ret);																												\
 		return h._ret;																											\
-	}																																			\
+	}} parse_##NAME
+#define Parser_Impl(NAME)																								\
 	void parse_##NAME##_helper::internal																	\
 	(string const& formula,size_t head,bool allow_leading_unary)
+#define Parser(NAME) Parser_Proto(NAME);Parser_Impl(NAME)
 
 #define consume_spaces(H) do{while(formula.size()>H && formula[H]==' ')H++;}while(0)
 
@@ -129,21 +136,18 @@ Parser(variable){
 	}
 }
 
-vPS parse_parenthetical(string const& formula,size_t head,bool allow_leading_unary);
-vPS parse_bracketed(string const& formula,size_t head,bool allow_leading_unary);
-vPS parse_braces(string const& formula,size_t head,bool allow_leading_unary);
-vPS parse_term(string const& formula,size_t head,bool allow_leading_unary);
-// TODO: Prototype Macro?
+Parser_Proto(parenthetical);
+Parser_Proto(bracketed);
+Parser_Proto(braces);
+Parser_Proto(term);
 
 Parser(space_term_or_brace){
 	if(head>=formula.size()) return;
 	bool has_space = formula[head]==' ';
 	consume_spaces(head);
-	for(auto body:parse_braces(formula,head,allow_leading_unary))
-		Return(body.eq,body.head);
+	ReturnV(parse_braces(formula,head,allow_leading_unary));
 	if(has_space)
-		for(auto body:parse_term(formula,head,allow_leading_unary))
-			Return(body.eq,body.head);}
+		ReturnV(parse_term(formula,head,allow_leading_unary));}
 
 Parser(named_operator){
 	consume_spaces(head);
@@ -191,19 +195,14 @@ Parser(constant){
 		Return(Equation::Constant({"i"}),h.head);
 }
 
-Parser(term){
+Parser_Impl(term){
 	consume_spaces(head);
 	// parenthesized | number | constant | variable | named_operator
-	for(auto par:parse_parenthetical(formula,head,true))
-		Return(par.eq,par.head);
-	for(auto num:parse_number(formula,head,allow_leading_unary))
-		Return(num.eq,num.head);
-	for(auto cnst:parse_constant(formula,head,allow_leading_unary))
-		Return(cnst.eq,cnst.head);
-	for(auto var:parse_variable(formula,head,allow_leading_unary))
-		Return(var.eq,var.head);
-	for(auto func:parse_named_operator(formula,head,allow_leading_unary))
-		Return(func.eq,func.head);
+	ReturnV(parse_parenthetical(formula,head,true));
+	ReturnV(parse_number(formula,head,allow_leading_unary));
+	ReturnV(parse_constant(formula,head,allow_leading_unary));
+	ReturnV(parse_variable(formula,head,allow_leading_unary));
+	ReturnV(parse_named_operator(formula,head,allow_leading_unary));
 }
 
 Parser(power){
@@ -237,8 +236,7 @@ Parser(product){
 	};
 	// power+(('*'?|'/')+power)*
 	for(auto power:parse_power(formula,head,allow_leading_unary))
-		for(auto rest:helper(power))
-			Return(rest.eq,rest.head);
+		ReturnV(helper(power));
 }
 
 Parser(sum){
@@ -258,17 +256,15 @@ Parser(sum){
 	};
 	// product+([+-]+product)*
 	for(auto product:parse_product(formula,head,allow_leading_unary))
-		for(auto rest:helper(product))
-			Return(rest.eq,rest.head);
+		ReturnV(helper(product));
 }
 
 Parser(expression){
 	// good enough for now
-	for(auto sum:parse_sum(formula,head,allow_leading_unary))
-		Return(sum.eq,sum.head);
+	ReturnV(parse_sum(formula,head,allow_leading_unary));
 }
 
-Parser(braces){
+Parser_Impl(braces){
 	// '{'+expression+'}'
 	unused(allow_leading_unary);
 	for(auto h:parse_sym<'{'>(formula,head))
@@ -276,7 +272,7 @@ Parser(braces){
 			for(auto h2:parse_sym<'}'>(formula,eq.head))
 				Return(eq.eq,h2.head);}
 
-Parser(bracketed){
+Parser_Impl(bracketed){
 	// '['+expression+']'
 	unused(allow_leading_unary);
 	for(auto h:parse_sym<'['>(formula,head))
@@ -285,7 +281,7 @@ Parser(bracketed){
 				Return(eq.eq,h2.head);}
 
 
-Parser(parenthetical){
+Parser_Impl(parenthetical){
 	// '('+expression+')'
 	unused(allow_leading_unary);
 	for(auto h:parse_sym<'('>(formula,head))
