@@ -43,6 +43,7 @@ parser: parser.o parse.o equation.o
 all: parser
 clean_targets:
 	-rm parser
+	-rm simplifyer
 
 ##
 # Code to check for `#include' statements.
@@ -114,22 +115,17 @@ TODO:
 ##
 # Run the tests
 ##
-# Tests are of the form $(TEST_DIR)/number-progam-testname.input $(TEST_DIR)/number-progam-testname.output
-##
-# Run the tests - by making a list of tests to run.
-##
-# Tests are of the form $(TEST_DIR)/number-progam-testname.input $(TEST_DIR)/number-progam-testname.output
-testrunner: $(TEST_FILES) Makefile tests.org | $(TEST_DIR)
-	@echo "Building test files"
-	# TODO: Move the test dir, update it, move it back
-	# This will keep the old timestamps if there was no diff and prevent rerunning tests
-	-@rm $(TEST_DIR)/*
+$(TEST_RES)/.updateded: tests.org $(TEST_RES)
+	@printf "Updating Tests ... "
+	@rm -rf $(TEST_DIR)
 	@emacs --batch tests.org --eval "(setq org-src-preserve-indentation t)" -f org-babel-tangle
-	@echo "Building tests list"
-	@ls tests.d|sed 's,\([0-9]*-[a-zA-Z_]*\)-[a-zA-Z0-9_]*[.]\(in\|out\)put,\1,'|uniq|sort|egrep "^[0-9]*-[a-zA-Z_]*$$" > $@
-	@sed -i $@ -e 's,\([0-9]*\)-\(.*\),tests: $(TEST_RES)/\1-\2\n$(TEST_RES)/\1-\2: \2 $(TEST_DIR)/\1-\2-*.input $(TEST_DIR)/\1-\2-*.output | $(TEST_RES)\n\t./\2 $(TEST_DIR)/\1-\2-*.input > $(TEST_RES)/\1-\2.tmp\n\tdiff -u $(TEST_RES)/\1-\2.tmp $(TEST_DIR)/\1-\2-*.output | ydiff --color=always --pager=cat\n\t@diff -u $(TEST_RES)/\1-\2.tmp $(TEST_DIR)/\1-\2-*.output > /dev/null\n\tmv $(TEST_RES)/\1-\2.tmp tests.r/\1-\2,'
-# TODO: This warns on all of the recipes being refreshed, silence that somehow.
-include testrunner
+	@echo "Done"
+	@touch $@
+
+tests: test_run
+.PHONY: test_run
+test_run: parser simplifyer $(TEST_RES)/.updateded
+	@./testrunner
 
 ##
 # Give a list of missing documentation

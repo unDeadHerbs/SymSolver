@@ -1,0 +1,230 @@
+#! /usr/bin/env python3
+
+#DIM_YELLOW = 33 # Was orange
+FG_YELLOW = 93
+FG_CYAN = 96
+FG_GREEN  = 32
+FG_RED    = 91#31
+BG_DEFAULT = 49
+C=lambda c: f"\x1b[0;{c:02d};{BG_DEFAULT}m"
+C_YELLOW = C(FG_YELLOW)
+C_CYAN = C(FG_CYAN)
+C_GREEN = C(FG_GREEN)
+C_RED = C(FG_RED)
+C_RESET = "\x1b[0m"
+
+import sys
+import time
+
+def remove_last_line():
+    sys.stdout.write("\x1b[1A") # move cursor up
+    sys.stdout.write("\x1b[2K") # delete whole line
+
+def replace_back_line(dist,text):
+    for n in range(dist):
+        sys.stdout.write("\x1b[1A") # move cursor up
+    sys.stdout.write("\x1b[2K") # delete whole line
+    sys.stdout.write(text)
+    for n in range(dist):
+        sys.stdout.write("\x1b[1B") # move cursor down
+
+def replace_back_text(dist,col,text):
+    sys.stdout.write("\x1b[s") # save cursor
+    for n in range(dist):
+        sys.stdout.write("\x1b[1A") # move cursor up
+    for n in range(col):
+        sys.stdout.write("\x1b[1C") # move cursor right
+    sys.stdout.write(text)
+    sys.stdout.write("\x1b[u") # restore cursor
+        
+def remove_n_lines(n):
+    for a in range(n):
+        remove_last_line()
+
+# class Display:
+#     def __init__(self):
+#         self.curernt_lines=0
+# 
+#     def update(self,lines):
+#         remove_n_lines(self.curernt_lines)
+#         for l in lines:
+#             sys.stdout.write(l + "\n")
+#         self.curernt_lines=len(lines)
+# 
+#     def save_top(self):
+#         self.curernt_lines = self.curernt_lines-1
+# 
+#d=Display()
+#d.update([C_YELLOW+"hello "+C_GREEN+"world!"+C_RESET])
+#d.save_top()
+#time.sleep(0.5)
+#d.update(["a","b","c","d"])
+#time.sleep(0.5)
+#d.update(["1","b","c","d"])
+#time.sleep(0.5)
+#d.update(["1","2","c","d"])
+#time.sleep(0.5)
+#d.update(["1","2","3","d"])
+#time.sleep(0.5)
+#d.update(["1","2","3","4"])
+#time.sleep(0.5)
+#d.update(["2","3","4"])
+#time.sleep(0.5)
+#d.update(["3","4"])
+#time.sleep(0.5)
+#d.update(["4"])
+
+
+# each folder can contain
+# 1. a README.md
+# 2. A set of numbered folders, each is recursively handled
+# 3. A set of numbered files
+#
+# Each set of files with the same number is considered a single test
+# Each test is made up of
+# 1. XX-README.md
+#    - Optional
+#    - An explanation of what and why, for when the test fails
+# 2. XX-program_name-name_or_comment.input
+#    - Optional and may be more than one
+#    - A file to be provided on the command line
+# 3. XX-program_name-name_or_comment.pipe
+#    - Optional
+#    - text to be piped into the program
+# 4. XX-program_name-name_or_comment.output
+#    - Required
+#    - A file that the output is diffed against
+# 5. XX-program_name-name_or_comment.flags
+#    - Optional
+#    - The arguments passed to the program
+#
+# Each folder is named with the pattern
+# 1. XX-name[_-]or[_-]comment
+#
+# Tests and Folders are required to be uniquely numbered within a level.
+
+import subprocess
+
+def run_test(directory,number,depth):
+    cleanup_length=0
+
+    files=[f for f in os.listdir(f'./{directory}') if f.startswith(f'{number:02d}')]
+    print(files)
+    # get name of output
+    output=[f for f in files if f.endswith('output')][0]
+    disp_name=output[3:-7].replace('-',' ')
+    remove_last_line()
+    sys.stdout.write(C_YELLOW+'*'*depth+f' {number:02d} {disp_name}'+C_RESET+'\n')
+
+    program_name = output.split('-')[1]
+    command = program_name
+
+    # get if name of flags
+    flags=[f for f in files if f.endswith('flags')]
+    if len(flags):
+        with open(directory+'/'+flags[0]) as f:
+            for line in f:
+                command = command+' '+line[:-1]
+
+    # get list of inputs
+    inputs=[f for f in files if f.endswith('input')]
+    for input in inputs:
+        command = f'{command} {directory}/{input}'
+
+    cache_path=f'.tests.cache/{directory}'
+    os.makedirs(cache_path, exist_ok=True)
+    cache_file=f'{cache_path}/{output[:-7]}.tmp'
+    # TODO: if cache_file exists and is newer than the program and all inputs: Green and Return
+
+    # get if README
+    if os.path.isfile(directory+f'/{number:02d}-README.md'):
+        with open(directory+f'/{number:02d}-README.md') as readme:
+            for line in readme:
+                sys.stdout.write(' '+line)
+                cleanup_length=cleanup_length+1
+            print('')
+            cleanup_length=cleanup_length+1
+
+    sys.stdout.write('Command: '+command+'\n')
+    cleanup_length=cleanup_length+1
+
+    # TODO: if program doesn't exist, make it
+    # The output isn't relaying, so the make file is preemptively doing this for now
+    #if not os.path.isfile(program_name):
+    #    print('building program')
+    #    make_proc=subprocess.Popen(['make',program_name],stdout=subprocess.PIPE,pipesize=1)
+    #    while make_proc.poll() is None:
+    #        time.sleep(.01)
+    #        #print(help(make_proc.stdout))
+    #        sout = make_proc.stdout.read()
+    #        #serr = make_proc.stderr.read()
+    #        if sout:
+    #            print(sout.strip()) # sys.stdout.write
+    #            # check for '\n's
+    #            cleanup_length=cleanup_length+1
+    #        #if serr:
+    #        #    print(serr.strip()) # sys.stdout.write
+    #        #    # check for '\n's
+    #        #    cleanup_length=cleanup_length+1
+    #    if make_proc.returncode != 0:
+    #        replace_back_line(1+cleanup_length,C_RED+'*'*depth+f' {number:02d} {disp_name}'+C_RESET)# header in red
+    #        exit(1)
+    #    print('built')
+    #time.sleep(10)
+
+    # Run the test and check the output
+    # TODO: Read a timeout from a config file
+    out=subprocess.run(('./'+command).split(' '),capture_output=True,text=True,timeout=10)
+    with open(cache_file,'w') as save:
+        save.write(out.stdout)
+    diff=subprocess.run(f'diff --color=always -Zy {cache_file} {directory}/{output}'.split(' '),capture_output=True,text=True)
+    
+    if out.returncode == 0 and diff.returncode == 0: # if success:
+        remove_n_lines(1+cleanup_length) # remove header + readme 
+        sys.stdout.write(C_GREEN+'*'*depth+f' {number:02d} {disp_name}'+C_RESET+'\n')
+        return
+    
+    # # else failure:
+    replace_back_line(1+cleanup_length,C_RED+'*'*depth+f' {number:02d} {disp_name}'+C_RESET)# header in red
+    print('')
+    if out.stderr:
+        print(out.stderr)
+    print(diff.stdout)
+    # ydiff has a better output but requires piping and isn't always installed
+    exit(1)
+
+import os
+
+def run_tests(directory='tests.d',depth=0):
+    files=[f for f in os.listdir(f'./{directory}') if f!='README.md']
+    nums=list(set([int(f[:2]) for f in files]))
+    count=len(nums) # get count of files and folders in folder
+    completed=0
+    readme_length=0
+    name = directory.split('/')[-1].replace('-',' ')
+    if depth!=0:
+        print(C_YELLOW+'*'*depth+f' [ {completed:02d} / {count:02d} ] '+name+C_RESET)
+        if os.path.isfile(directory+'/README.md'):
+            with open(directory+'/README.md') as readme:
+                for line in readme:
+                    sys.stdout.write(' '+line)
+                    readme_length=readme_length+1
+    else:
+        print(C_YELLOW+'Running Tests'+C_RESET)
+    for tst in range(count):
+        fnd=[f for f in files if f.startswith(f'{nums[tst]:02d}')][0]
+        path=directory+'/'+fnd
+        if os.path.isfile(path):
+            run_test(directory,nums[tst],depth)
+        else: # folder
+            run_tests(path,depth+1)
+        completed=completed+1
+        if depth!=0:
+            replace_back_text(1+completed+readme_length,depth+3,C_CYAN+f'{completed:02d}')
+    remove_n_lines(1+count+readme_length) # remove header + tests + readme
+    if depth!=0:
+        print(C_GREEN+'*'*depth+f' [  PASSED ] '+name+C_RESET)
+    else:
+        print(C_GREEN+'All Tests Passed'+C_RESET)
+
+run_tests()

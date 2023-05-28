@@ -1,6 +1,5 @@
 .dep
 parser
-testrunner
 tests.d
 tests.r
 Doxyfile
