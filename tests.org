@@ -867,3 +867,45 @@ Unbound: x,y
 Bound:
 Mixed Use:
 #+END_SRC
+*** 04 Substitution
+#+BEGIN_SRC scheme :tangle tests.d/03-Parser-Expanding/05-Parse-Bindings/04-parser-Substitution.flags
+-B
+#+END_SRC
+#+BEGIN_SRC scheme :tangle tests.d/03-Parser-Expanding/05-Parse-Bindings/04-parser-Substitution.input
+[x+y]_{x=2}
+#+END_SRC
+#+BEGIN_SRC scheme :tangle tests.d/03-Parser-Expanding/05-Parse-Bindings/04-parser-Substitution.output
+[x+y]_{x=2}
+
+Unbound: y
+Bound: x
+Mixed Use:
+#+END_SRC
+*** 05 Rebinding
+#+BEGIN_SRC scheme :tangle tests.d/03-Parser-Expanding/05-Parse-Bindings/05-parser-Rebinding.flags
+-B
+#+END_SRC
+#+BEGIN_SRC scheme :tangle tests.d/03-Parser-Expanding/05-Parse-Bindings/05-parser-Rebinding.input
+[x+y]_{x=z}
+#+END_SRC
+#+BEGIN_SRC scheme :tangle tests.d/03-Parser-Expanding/05-Parse-Bindings/05-parser-Rebinding.output
+[x+y]_{x=z}
+
+Unbound: y,z
+Bound: x
+Mixed Use:
+#+END_SRC
+*** 06 Mixed
+#+BEGIN_SRC scheme :tangle tests.d/03-Parser-Expanding/05-Parse-Bindings/06-parser-Mixed.flags
+-B
+#+END_SRC
+#+BEGIN_SRC scheme :tangle tests.d/03-Parser-Expanding/05-Parse-Bindings/06-parser-Mixed.input
+x+[x+y]_{x=2}
+#+END_SRC
+#+BEGIN_SRC scheme :tangle tests.d/03-Parser-Expanding/05-Parse-Bindings/06-parser-Mixed.output
+x+[x+y]_{x=2}
+
+Unbound: y
+Bound:
+Mixed Use: x
+#+END_SRC

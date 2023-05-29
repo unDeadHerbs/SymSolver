@@ -59,11 +59,11 @@ concept Parser=requires(T parser,string const& formula,size_t head,bool allow_le
 	struct Parser_##NAME{																									\
 	vPS operator()																												\
 	(string const& formula,size_t head,bool allow_leading_unary) const{		\
-		DB("Entering "<<__func__ << ": " <<																	\
+		DB("Entering "<<#NAME << ": " <<																		\
 			 formula.substr(0,head)<<" || "<<formula.substr(head));						\
 		parse_##NAME##_helper h;																						\
 		h.internal(formula,head,allow_leading_unary);												\
-		DB(" Leaving " << __func__ << ": "<<h._ret.size());									\
+		DB(" Leaving " << #NAME << ": "<<h._ret.size());										\
 		DBv(h._ret);																												\
 		return h._ret;																											\
 	}} parse_##NAME
@@ -169,6 +169,7 @@ Parser(variable){
 }
 
 Parser_Proto(parenthetical);
+Parser_Proto(expression);
 Parser_Proto(bracketed);
 Parser_Proto(braces);
 Parser_Proto(term);
@@ -227,8 +228,20 @@ Parser(constant){
 		ReturnI(Equation::Constant({"i"}),h.head);
 }
 
+Parser(Bracket_Substitution){
+	// [expr]_{var=exp}
+	for(auto body:parse_bracketed(formula,head,allow_leading_unary))
+		for(auto b:parse_sym("_{",formula,body.head))
+			for(auto v:parse_variable(formula,b.head,true))
+				for(auto e:parse_sym<'='>(formula,v.head))
+					for(auto exp:parse_expression(formula,e.head,true))
+						for(auto c:parse_sym<'}'>(formula,exp.head))
+							ReturnI(Equation::F_node({{{v.eq,exp.eq},{}},"binding",{body.eq}}),c.head);
+}
+
 Parser_Impl(term){
 	ReturnP(parse_parenthetical
+	       |parse_Bracket_Substitution
 	       |parse_number
 	       |parse_constant
 	       |parse_variable
@@ -294,7 +307,7 @@ Parser(sum){
 	// TODO: ReturnP(parse_product+helper);
 }
 
-Parser(expression){
+Parser_Impl(expression){
 	// good enough for now
 	ReturnP(parse_sum);
 }

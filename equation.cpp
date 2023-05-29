@@ -2,6 +2,7 @@
 #include <iostream>
 #include <cmath>
 #include <algorithm>
+#include <numeric>
 
 // Copied from cppreference, not sure why its not in the std namespace already.
 // This lets std::visit take a set of lambdas.
@@ -98,7 +99,7 @@ bool right_binding(Equation::Operator op){
 		return true;
 	}}
 
-// This is a bad TypeDef; but, it's only used for the immediately following lambda
+// This is a bad TypeDef; but, it's only used for the immediately following.
 typedef std::tuple<std::vector<Equation::Variable>,std::vector<Equation::Variable>,std::vector<Equation::Variable>> TVvVvVv;
 TVvVvVv operator+(TVvVvVv const lhs,TVvVvVv const rhs){
 	auto& [lu,lb,lm] = lhs;
@@ -141,7 +142,30 @@ bindings(Equation const& eq){
 			[&](                     double)->TVvVvVv{ return {{},{},{}}; },
 			[&](     Equation::Variable var)->TVvVvVv{ return {{var},{},{}}; },
 			[&](         Equation::Constant)->TVvVvVv{ return {{},{},{}}; },
-			[&](  Equation::F_node const& /*f*/)->TVvVvVv{ return {{},{},{}}; },
+			[&](  Equation::F_node const& f)->TVvVvVv{
+				auto body=std::transform_reduce(f.arguments.begin(),
+				                                f.arguments.end(),
+				                                TVvVvVv({{},{},{}}),
+				                                std::plus{},
+				                                bindings);
+				auto super=std::transform_reduce(f.superscripts.begin(),
+				                                 f.superscripts.end(),
+				                                 TVvVvVv({{},{},{}}),
+				                                 std::plus{},
+				                                 bindings);
+				if(f.subscripts.size()){
+					auto sub=std::transform_reduce(f.subscripts.begin()+1,
+				                                 f.subscripts.end(),
+				                                 TVvVvVv({{},{},{}}),
+				                                 std::plus{},
+				                                 bindings);
+					// TODO: Make the bound variable a part of F_nodes, to avoid this get.
+					auto var = std::get<Equation::Variable>(f.subscripts[0].value);
+					std::erase(std::get<0>(body),var);
+					return body+TVvVvVv({{},{var},{}})+super+sub;
+				}
+				return body;
+			},
 			[&](Equation::Op_node const& eq)->TVvVvVv{ return bindings(*eq.left)+bindings(*eq.right); }
 		},eq.value);
 }
@@ -171,6 +195,12 @@ std::ostream& operator<<(std::ostream& o,Equation const& rhs){
 					o<<"[New Constant, Fix Printer]";
 			},
 			[&](Equation::F_node const& f){
+				if(f.function=="binding"){
+					o<<'['<<f.arguments[0]<<']';
+					if(f.superscripts.size())
+						o<<"^{"<<f.subscripts[0]<<"="<<f.superscripts[2]<<"}";
+					o<<"_{"<<f.subscripts[0]<<"="<<f.subscripts[1]<<"}";
+				}else{
 				o << f.function;
 				if(f.subscripts.size()){
 					auto parens=false;
@@ -186,7 +216,7 @@ std::ostream& operator<<(std::ostream& o,Equation const& rhs){
 				if(f.customizations.size())
 					o<<'['<<f.customizations[0]<<']';
 				if(f.arguments.size())
-					o<<'{'<<f.arguments[0]<<'}';
+					o<<'{'<<f.arguments[0]<<'}';}
 			},
 			[&](Equation::Op_node const& eq){
 				auto prec = precedent(eq.op);
