@@ -1,6 +1,7 @@
 #include "equation.hpp"
 #include <iostream>
 #include <cmath>
+#include <algorithm>
 
 // Copied from cppreference, not sure why its not in the std namespace already.
 // This lets std::visit take a set of lambdas.
@@ -96,6 +97,54 @@ bool right_binding(Equation::Operator op){
 	case Equation::Operator::DIVIDE:
 		return true;
 	}}
+
+// This is a bad TypeDef; but, it's only used for the immediately following lambda
+typedef std::tuple<std::vector<Equation::Variable>,std::vector<Equation::Variable>,std::vector<Equation::Variable>> TVvVvVv;
+TVvVvVv operator+(TVvVvVv const lhs,TVvVvVv const rhs){
+	auto& [lu,lb,lm] = lhs;
+	auto& [ru,rb,rm] = rhs;
+	std::vector<Equation::Variable> u,b,m;
+
+	for(auto&e:lm)
+		m.push_back(e);
+	for(auto&e:rm)
+		if(std::find(m.begin(), m.end(),e) == m.end())
+			m.push_back(e);
+
+	for(auto&e:lb)
+		if(std::find(m.begin(), m.end(),e) == m.end())
+			if(std::find(ru.begin(), ru.end(),e) == ru.end())
+				b.push_back(e);
+			else
+				m.push_back(e);
+	for(auto&e:rb)
+		if(std::find(m.begin(), m.end(),e) == m.end())
+			if(std::find(lu.begin(), lu.end(),e) == lu.end()){
+				if(std::find(b.begin(), b.end(),e) == b.end())
+					b.push_back(e);
+			}else
+				m.push_back(e);
+
+	for(auto&e:lu)
+		if(std::find(m.begin(), m.end(),e) == m.end())
+			u.push_back(e);
+	for(auto&e:ru)
+		if(std::find(m.begin(), m.end(),e) == m.end())
+			if(std::find(u.begin(), u.end(),e) == u.end())
+				u.push_back(e);
+
+	return {u,b,m};
+}
+TVvVvVv
+bindings(Equation const& eq){
+	return std::visit(overloaded{
+			[&](                     double)->TVvVvVv{ return {{},{},{}}; },
+			[&](     Equation::Variable var)->TVvVvVv{ return {{var},{},{}}; },
+			[&](         Equation::Constant)->TVvVvVv{ return {{},{},{}}; },
+			[&](  Equation::F_node const& /*f*/)->TVvVvVv{ return {{},{},{}}; },
+			[&](Equation::Op_node const& eq)->TVvVvVv{ return bindings(*eq.left)+bindings(*eq.right); }
+		},eq.value);
+}
 
 std::ostream& operator<<(std::ostream& o,Equation const& rhs){
 	std::visit(overloaded{

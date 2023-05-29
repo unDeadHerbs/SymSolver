@@ -9,6 +9,7 @@
 struct Equation {
 	struct Variable{
 		std::string name;
+		auto operator<=>(Variable const&)const=default;
 	};
 	struct Constant{
 		std::string name;
@@ -46,6 +47,9 @@ struct Equation {
 	Equation(Variable v):value(v){};
 	Equation(Constant v):value(v){};
 };
+
+std::tuple<std::vector<Equation::Variable>,std::vector<Equation::Variable>,std::vector<Equation::Variable>>
+bindings(Equation const&); // unbound, bound, mixed
 
 int precedent(Equation::Operator op);
 bool commutative(Equation::Operator);

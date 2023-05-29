@@ -819,3 +819,51 @@ this is very hard, perhaps it's time for a refacting.
 #+BEGIN_SRC scheme :tangle tests.d/03-Parser-Expanding/04-Ignore-Spaces/06-parser-spaces_function.output
 \ln{3}
 #+END_SRC
+** 05 Parse Bindings
+#+BEGIN_SRC scheme :tangle tests.d/03-Parser-Expanding/05-Parse-Bindings/README.md
+The next section will require the parser to understand variable scope.
+So it's being tested for here.  A `-B` (stands for Bindings) flag will
+be passed to the parser during these tests.
+#+END_SRC
+*** 01 Number
+#+BEGIN_SRC scheme :tangle tests.d/03-Parser-Expanding/05-Parse-Bindings/01-parser-Number.flags
+-B
+#+END_SRC
+#+BEGIN_SRC scheme :tangle tests.d/03-Parser-Expanding/05-Parse-Bindings/01-parser-Number.input
+3
+#+END_SRC
+#+BEGIN_SRC scheme :tangle tests.d/03-Parser-Expanding/05-Parse-Bindings/01-parser-Number.output
+3
+
+Unbound:
+Bound:
+Mixed Use:
+#+END_SRC
+*** 02 Variable
+#+BEGIN_SRC scheme :tangle tests.d/03-Parser-Expanding/05-Parse-Bindings/02-parser-Variable.flags
+-B
+#+END_SRC
+#+BEGIN_SRC scheme :tangle tests.d/03-Parser-Expanding/05-Parse-Bindings/02-parser-Variable.input
+x
+#+END_SRC
+#+BEGIN_SRC scheme :tangle tests.d/03-Parser-Expanding/05-Parse-Bindings/02-parser-Variable.output
+x
+
+Unbound: x
+Bound:
+Mixed Use:
+#+END_SRC
+*** 03 Variables
+#+BEGIN_SRC scheme :tangle tests.d/03-Parser-Expanding/05-Parse-Bindings/03-parser-Variables.flags
+-B
+#+END_SRC
+#+BEGIN_SRC scheme :tangle tests.d/03-Parser-Expanding/05-Parse-Bindings/03-parser-Variables.input
+x+y
+#+END_SRC
+#+BEGIN_SRC scheme :tangle tests.d/03-Parser-Expanding/05-Parse-Bindings/03-parser-Variables.output
+x+y
+
+Unbound: x,y
+Bound:
+Mixed Use:
+#+END_SRC

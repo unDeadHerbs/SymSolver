@@ -19,10 +19,13 @@ using std::string;
 
 struct ParserState{
 	Equation eq;
-	//std::vector<string> bound; // list of bound variables.
-	//std::vector<string> unbound; // list of unbound variables.
 	size_t head;
 };
+
+ParserState operator+(Equation const& eq,ParserState ps){
+	ps.eq=eq;
+	return ps;
+}
 
 struct SimpleParserState{
 	string token;
@@ -39,7 +42,7 @@ vSPS operator+(vSPS lhs,vSPS rhs){for(auto e:rhs)lhs.push_back(e);return lhs;} /
 // Return Internal : For the base Parsers
 #define ReturnI(EQ,H) _ret.push_back({EQ,H})
 // Return : For modifying the equation at HEAD
-#define Return(EQ,PS) _ret.push_back({EQ,PS.head})
+#define Return(PS) _ret.push_back(PS)
 // Return Vector : for returning a whole vector of Parser States
 #define ReturnV(VPS) _ret+=VPS
 // Return Parser : for directly calling another parser and returning all values
@@ -136,11 +139,11 @@ Parser(latex_basic){
 			ret += formula[h.head++];
 		}
 		ret += formula[h.head++];
-		Return(Equation::Variable({ret}),h);
+		ReturnI(Equation::Variable({ret}),h.head);
 	}
 	for(auto& on:parse_number(formula,head,false))
 		// Just grabbing the length.
-		Return(Equation::Variable({formula.substr(head,on.head)}),on);
+		Return(Equation::Variable({formula.substr(head,on.head)})+on);
 	if(_ret.size()==0 && formula[head]!='{'){ // TODO: Don't touch the internals.
 		std::cerr <<"Warning: LaTeX group requested but not found, using one char." << std::endl;
 		ReturnI(Equation::Variable({string({formula[head]})}),head+1);
@@ -152,13 +155,13 @@ Parser(variable){
 	if(allow_leading_unary)
 		for(auto h:parse_sym<'-'>(formula,head))
 			for(auto var:parse_variable(formula,h.head,false))
-				Return(Equation({Equation::Operator::MULTIPLY,Equation(-1),var.eq}),var);
+				Return(Equation({Equation::Operator::MULTIPLY,Equation(-1),var.eq})+var);
 	if(head<formula.size() && std::isalpha(formula[head])){
 		std::string var({formula[head++]});
 		for(auto under:parse_sym<'_'>(formula,head))
 			for(auto nxt:parse_latex_basic(formula,under.head,allow_leading_unary)){
 				auto var2=var+under.token+std::get<Equation::Variable>(nxt.eq.value).name;
-				Return({Equation::Variable({var2})},nxt);
+				Return(Equation({Equation::Variable({var2})})+nxt);
 			}
 		if(var!="i") // The imaginary unit isn't a variable.
 		  ReturnI({Equation::Variable({var})},head);
@@ -185,33 +188,33 @@ Parser(named_operator){
 	for(auto h:parse_sym("\\sqrt",formula,head)){
 		for(auto tmplte:parse_bracketed(formula,h.head,true))
 			for(auto body:parse_space_term_or_brace(formula,tmplte.head,true))
-				Return(Equation::F_node({"\\sqrt",{tmplte.eq},{body.eq}}),body);
+				Return(Equation::F_node({"\\sqrt",{tmplte.eq},{body.eq}})+body);
 		for(auto body:parse_space_term_or_brace(formula,h.head,true))
-			Return(Equation::F_node({"\\sqrt",{body.eq}}),body);}
+			Return(Equation::F_node({"\\sqrt",{body.eq}})+body);}
 	for(auto h:parse_sym("\\ln",formula,head))
 		for(auto body:parse_space_term_or_brace(formula,h.head,true))
-			Return(Equation::F_node({"\\ln",{body.eq}}),body);
+			Return(Equation::F_node({"\\ln",{body.eq}})+body);
 	for(auto h:parse_sym("\\log",formula,head)){
 		for(auto h2:parse_sym<'_'>(formula,h.head)){
 			for(auto base:parse_term(formula,h2.head,false))
 				for(auto body:parse_space_term_or_brace(formula,base.head,true))
-					ReturnI(Equation::F_node({{{base.eq},{}},"\\log",{body.eq}}),body.head);}
+					ReturnI(Equation::F_node({{{base.eq},{}},"\\log",{body.eq}}),body.head);}// TODO: Bidnings
 		for(auto body:parse_space_term_or_brace(formula,h.head,true))
-			Return(Equation::F_node({"\\log",{body.eq}}),body);}
+			Return(Equation::F_node({"\\log",{body.eq}})+body);}
 
 	// Trig Functions
 	for(auto h:parse_sym("\\exp",formula,head))
 		for(auto body:parse_space_term_or_brace(formula,h.head,true))
-			Return(Equation::F_node({"\\exp",{body.eq}}),body);
+			Return(Equation::F_node({"\\exp",{body.eq}})+body);
 	for(auto h:parse_sym("\\sin",formula,head))
 		for(auto body:parse_space_term_or_brace(formula,h.head,true))
-			Return(Equation::F_node({"\\sin",{body.eq}}),body);
+			Return(Equation::F_node({"\\sin",{body.eq}})+body);
 	for(auto h:parse_sym("\\cos",formula,head))
 		for(auto body:parse_space_term_or_brace(formula,h.head,true))
-			Return(Equation::F_node({"\\cos",{body.eq}}),body);
+			Return(Equation::F_node({"\\cos",{body.eq}})+body);
 	for(auto h:parse_sym("\\tan",formula,head))
 		for(auto body:parse_space_term_or_brace(formula,h.head,true))
-			Return(Equation::F_node({"\\tan",{body.eq}}),body);
+			Return(Equation::F_node({"\\tan",{body.eq}})+body);
 }
 
 Parser(constant){
@@ -237,8 +240,8 @@ Parser(power){
 		consume_spaces(term.head);
 		for(auto h:parse_sym<'^'>(formula,term.head))
 			for(auto exp:parse_power(formula,h.head,true))
-				ReturnI(Equation::Op_node({'^',term.eq,exp.eq}),exp.head);
-		Return(term.eq,term);
+				ReturnI(Equation::Op_node({'^',term.eq,exp.eq}),exp.head); // TODO: Bindings
+		Return(term);
 	}
 }
 
@@ -252,18 +255,22 @@ Parser(product){
 		for(auto op:parse_sym<'*'>(formula,ps.head) + parse_sym<'/'>(formula,ps.head)){
 			for(auto power:parse_power(formula,ps.head+1,true)){
 					Equation t={Equation::Op_node({op.token[0],{ps.eq},{power.eq}})};
-					for(auto r:helper(ParserState({t,power.head})))
+					for(auto r:helper(t+power))
 						ret.push_back(r);
+					// TODO: make =t= a transform function and then use + to chain these.
+					// TODO: ret+=(parse_power + t + helper)(formula,ps.head+1,true);
 			}}
 		for(auto power:parse_power(formula,ps.head,true)){
 			Equation t={Equation::Op_node({'*',{ps.eq},{power.eq}})};
-			for(auto r:helper(ParserState({t,power.head})))
+			for(auto r:helper(t+power))
 				ret.push_back(r);}
+		// TODO: make =t= a transform function and then use + to chain these.
 		return ret;
 	};
 	// power+(('*'?|'/')+power)*
 	for(auto power:parse_power(formula,head,allow_leading_unary))
 		ReturnV(helper(power));
+	// TODO: ReturnP(parse_power+helper);
 }
 
 Parser(sum){
@@ -276,7 +283,7 @@ Parser(sum){
 		for(auto op:parse_sym<'+'>(formula,ps.head) + parse_sym<'-'>(formula,ps.head)){
 			for(auto product:parse_product(formula,ps.head+1,true)){
 					Equation t={Equation::Op_node({op.token[0],{ps.eq},{product.eq}})};
-					for(auto r:helper(ParserState({t,product.head})))
+					for(auto r:helper(t+product))
 						ret.push_back(r);
 			}}
 		return ret;
@@ -284,6 +291,7 @@ Parser(sum){
 	// product+([+-]+product)*
 	for(auto product:parse_product(formula,head,allow_leading_unary))
 		ReturnV(helper(product));
+	// TODO: ReturnP(parse_product+helper);
 }
 
 Parser(expression){
