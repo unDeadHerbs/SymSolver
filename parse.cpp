@@ -230,15 +230,24 @@ Parser(constant){
 
 Parser(Bracket_Substitution){
 	// [expr]_{var=exp}
-	for(auto body:parse_bracketed(formula,head,allow_leading_unary))
+	for(auto body:parse_bracketed(formula,head,allow_leading_unary)){
+		for(auto u:parse_sym("^{",formula,body.head))
+			for(auto up:parse_expression(formula,u.head,true))
+				for(auto b:parse_sym("}_{",formula,up.head))
+					for(auto v:parse_variable(formula,b.head,true))
+						for(auto e:parse_sym<'='>(formula,v.head))
+							for(auto lower:parse_expression(formula,e.head,true))
+								for(auto c:parse_sym<'}'>(formula,lower.head))
+									ReturnI(Equation::F_node({"binding",std::get<Equation::Variable>(v.eq.value),
+									                         {{lower.eq},{up.eq}},{body.eq}}),c.head);
 		for(auto b:parse_sym("_{",formula,body.head))
 			for(auto v:parse_variable(formula,b.head,true))
 				for(auto e:parse_sym<'='>(formula,v.head))
-					for(auto exp:parse_expression(formula,e.head,true))
-						for(auto c:parse_sym<'}'>(formula,exp.head))
+					for(auto lower:parse_expression(formula,e.head,true))
+						for(auto c:parse_sym<'}'>(formula,lower.head))
 							ReturnI(Equation::F_node({"binding",std::get<Equation::Variable>(v.eq.value),
-							                         {{exp.eq},{}},{body.eq}}),c.head);
-}
+							                         {{lower.eq},{}},{body.eq}}),c.head);
+	}}
 
 Parser_Impl(term){
 	ReturnP(parse_parenthetical

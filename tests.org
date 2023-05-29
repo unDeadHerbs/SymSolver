@@ -909,3 +909,17 @@ Unbound: y
 Bound:
 Mixed Use: x
 #+END_SRC
+*** 07 Ranged
+#+BEGIN_SRC scheme :tangle tests.d/03-Parser-Expanding/05-Parse-Bindings/07-parser-Ranged.flags
+-B
+#+END_SRC
+#+BEGIN_SRC scheme :tangle tests.d/03-Parser-Expanding/05-Parse-Bindings/07-parser-Ranged.input
+[x+y]^{4}_{x=2}
+#+END_SRC
+#+BEGIN_SRC scheme :tangle tests.d/03-Parser-Expanding/05-Parse-Bindings/07-parser-Ranged.output
+[x+y]^{x=4}_{x=2}
+
+Unbound: y
+Bound: x
+Mixed Use:
+#+END_SRC
