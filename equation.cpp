@@ -148,23 +148,24 @@ bindings(Equation const& eq){
 				                                TVvVvVv({{},{},{}}),
 				                                std::plus{},
 				                                bindings);
-				auto super=std::transform_reduce(f.superscripts.begin(),
-				                                 f.superscripts.end(),
+				// There's only ever one of these, this is just the closes to
+				// a "maybe" monad I have right now.
+				auto super=std::transform_reduce(f.superscript.begin(),
+				                                 f.superscript.end(),
 				                                 TVvVvVv({{},{},{}}),
 				                                 std::plus{},
 				                                 bindings);
-				if(f.subscripts.size()){
-					auto sub=std::transform_reduce(f.subscripts.begin()+1,
-				                                 f.subscripts.end(),
+				auto sub=std::transform_reduce(f.subscript.begin(),
+				                                 f.subscript.end(),
 				                                 TVvVvVv({{},{},{}}),
 				                                 std::plus{},
 				                                 bindings);
-					// TODO: Make the bound variable a part of F_nodes, to avoid this get.
-					auto var = std::get<Equation::Variable>(f.subscripts[0].value);
+				if(f.bound){
+					auto var = *f.bound;
 					std::erase(std::get<0>(body),var);
 					return body+TVvVvVv({{},{var},{}})+super+sub;
 				}
-				return body;
+				return body+super+sub;
 			},
 			[&](Equation::Op_node const& eq)->TVvVvVv{ return bindings(*eq.left)+bindings(*eq.right); }
 		},eq.value);
@@ -197,19 +198,19 @@ std::ostream& operator<<(std::ostream& o,Equation const& rhs){
 			[&](Equation::F_node const& f){
 				if(f.function=="binding"){
 					o<<'['<<f.arguments[0]<<']';
-					if(f.superscripts.size())
-						o<<"^{"<<f.subscripts[0]<<"="<<f.superscripts[2]<<"}";
-					o<<"_{"<<f.subscripts[0]<<"="<<f.subscripts[1]<<"}";
+					if(f.superscript.size())
+						o<<"^{"<<*f.bound<<"="<<f.superscript[0]<<"}";
+					o<<"_{"<<*f.bound<<"="<<f.subscript[0]<<"}";
 				}else{
 				o << f.function;
-				if(f.subscripts.size()){
+				if(f.subscript.size()){
 					auto parens=false;
-					if(auto eqq=std::get_if<Equation::Op_node>(&f.subscripts[0].value))
+					if(auto eqq=std::get_if<Equation::Op_node>(&f.subscript[0].value))
 						parens=true;
 					o<<"_";
 					if(parens)
 						o<<"(";
-					o <<f.subscripts[0];// TODO: maybe add {}s?
+					o <<f.subscript[0];// TODO: maybe add {}s?
 					if(parens)
 						o<<")";
 				}

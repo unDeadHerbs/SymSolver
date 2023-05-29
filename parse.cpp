@@ -236,7 +236,8 @@ Parser(Bracket_Substitution){
 				for(auto e:parse_sym<'='>(formula,v.head))
 					for(auto exp:parse_expression(formula,e.head,true))
 						for(auto c:parse_sym<'}'>(formula,exp.head))
-							ReturnI(Equation::F_node({{{v.eq,exp.eq},{}},"binding",{body.eq}}),c.head);
+							ReturnI(Equation::F_node({"binding",std::get<Equation::Variable>(v.eq.value),
+							                         {{exp.eq},{}},{body.eq}}),c.head);
 }
 
 Parser_Impl(term){

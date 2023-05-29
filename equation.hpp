@@ -5,6 +5,7 @@
 #include <variant>
 #include <memory>
 #include <vector>
+#include <optional>
 
 struct Equation {
 	struct Variable{
@@ -28,17 +29,22 @@ struct Equation {
 		Op_node& operator=(Op_node const&);
 	};
 	struct F_node{
-		std::string function;
+		// TODO: Make subscripts and superscripts into optionals and have
+		// an optional bound variable position.
+		std::string function; // TODO: Make this an enum.
 		std::vector<Equation> customizations;
-		std::vector<Equation> subscripts;
-		std::vector<Equation> superscripts;
+		std::optional<Variable> bound;
+		std::vector<Equation> subscript; // This is an optional but that type is harder to work with.
+		std::vector<Equation> superscript;
 		std::vector<Equation> arguments;
 		F_node(std::string f,std::vector<Equation> b)
 			:function(f),arguments(b){}
 		F_node(std::string f,std::vector<Equation> c,std::vector<Equation> b)
 			:function(f),customizations(c),arguments(b){}
 		F_node(std::pair<std::vector<Equation>,std::vector<Equation>> ssc,std::string f,std::vector<Equation> b)
-			:function(f),subscripts(ssc.first),superscripts(ssc.second),arguments(b){}
+			:function(f),subscript(ssc.first),superscript(ssc.second),arguments(b){}
+		F_node(std::string f,Variable v,std::pair<std::vector<Equation>,std::vector<Equation>> ssc,std::vector<Equation> b)
+			:function(f),bound(v),subscript(ssc.first),superscript(ssc.second),arguments(b){}
 	};
 	std::variant<double,Constant,Variable,Op_node,F_node> value;
 	Equation(double v):value(v){};
