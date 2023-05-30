@@ -265,6 +265,16 @@ Parser(named_operator){
 							for(auto body:parser_sum_require_binding(var,formula,up.head,true))
 								ReturnI(Equation::F_node({"\\sum",var,
 																					{{lower.eq},{up.eq}},{body.eq}}),body.head);}
+	for(auto h:parse_sym("\\prod_{",formula,head))
+		for(auto v:parse_variable(formula,h.head,true)){
+			auto var=std::get<Equation::Variable>(v.eq.value);
+			for(auto e:parse_sym<'='>(formula,v.head))
+				for(auto lower:parse_expression(formula,e.head,true))
+					for(auto p:parse_sym("}^",formula,lower.head))
+						for(auto up:parse_brace_or_single(formula,p.head,true))
+							for(auto body:parser_sum_require_binding(var,formula,up.head,true))
+								ReturnI(Equation::F_node({"\\prod",var,
+																					{{lower.eq},{up.eq}},{body.eq}}),body.head);}
 }
 
 Parser(constant){

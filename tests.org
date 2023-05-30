@@ -970,3 +970,38 @@ variable scope.
 #+BEGIN_SRC scheme :tangle tests.d/03-Parser-Expanding/06-Binding-Operators/06-parser-sum_double_same.output
 \sum_{x=1}^5(x)+\sum_{x=1}^5(x)
 #+END_SRC
+*** 07 Product Basic
+#+BEGIN_SRC scheme :tangle tests.d/03-Parser-Expanding/06-Binding-Operators/07-parser-prod_basic.input
+\prod_{x=1}^5 x
+#+END_SRC
+#+BEGIN_SRC scheme :tangle tests.d/03-Parser-Expanding/06-Binding-Operators/07-parser-prod_basic.output
+\prod_{x=1}^5(x)
+#+END_SRC
+*** 08 Product Binding
+#+BEGIN_SRC scheme :tangle tests.d/03-Parser-Expanding/06-Binding-Operators/08-parser-prod_binding.input
+\prod_{x=1}^5 3+x
+#+END_SRC
+#+BEGIN_SRC scheme :tangle tests.d/03-Parser-Expanding/06-Binding-Operators/08-parser-prod_binding.output
+\prod_{x=1}^5(3+x)
+#+END_SRC
+*** 09 Product Non-Binding
+#+BEGIN_SRC scheme :tangle tests.d/03-Parser-Expanding/06-Binding-Operators/09-parser-prod_non_binding.input
+\prod_{x=1}^5 x+3
+#+END_SRC
+#+BEGIN_SRC scheme :tangle tests.d/03-Parser-Expanding/06-Binding-Operators/09-parser-prod_non_binding.output
+\prod_{x=1}^5(x)+3
+#+END_SRC
+*** 10 Product Double
+#+BEGIN_SRC scheme :tangle tests.d/03-Parser-Expanding/06-Binding-Operators/10-parser-prod_double.input
+\prod_{x=1}^5 x+\prod_{y=1}^5 y
+#+END_SRC
+#+BEGIN_SRC scheme :tangle tests.d/03-Parser-Expanding/06-Binding-Operators/10-parser-prod_double.output
+\prod_{x=1}^5(x)+\prod_{y=1}^5(y)
+#+END_SRC
+*** 11 Product Double Same
+#+BEGIN_SRC scheme :tangle tests.d/03-Parser-Expanding/06-Binding-Operators/11-parser-prod_double_same.input
+\prod_{x=1}^5 x+\prod_{x=1}^5 x
+#+END_SRC
+#+BEGIN_SRC scheme :tangle tests.d/03-Parser-Expanding/06-Binding-Operators/11-parser-prod_double_same.output
+\prod_{x=1}^5(x)+\prod_{x=1}^5(x)
+#+END_SRC
