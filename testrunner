@@ -74,6 +74,8 @@ def remove_n_lines(n):
 #time.sleep(0.5)
 #d.update(["4"])
 
+# TODO: Move the tests to be in folders so that they are easier for
+# students to duplicate and make more examples.
 
 # each folder can contain
 # 1. a README.md

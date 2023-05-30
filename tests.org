@@ -661,10 +661,10 @@ Parse some well known functions, constants, and operators.
 #+END_SRC
 *** 10 Logarithm 2
 #+BEGIN_SRC scheme :tangle tests.d/03-Parser-Expanding/01-Common-Operators/10-parser-log_2.input
-\log_(4/2){3}
+\log_{4/2}{3}
 #+END_SRC
 #+BEGIN_SRC scheme :tangle tests.d/03-Parser-Expanding/01-Common-Operators/10-parser-log_2.output
-\log_(4/2){3}
+\log_{4/2}{3}
 #+END_SRC
 *** 11 Exponential Operator
 #+BEGIN_SRC scheme :tangle tests.d/03-Parser-Expanding/01-Common-Operators/11-parser-pow.input
@@ -1004,4 +1004,99 @@ variable scope.
 #+END_SRC
 #+BEGIN_SRC scheme :tangle tests.d/03-Parser-Expanding/06-Binding-Operators/11-parser-prod_double_same.output
 \prod_{x=1}^5(x)+\prod_{x=1}^5(x)
+#+END_SRC
+** 07 Completeness Tests
+*** 01 No Dangling Functions
+#+BEGIN_SRC scheme :tangle tests.d/03-Parser-Expanding/07-Completeness/01-parser-Dangling_Function.input
+\sqrt{3
+#+END_SRC
+#+BEGIN_SRC scheme :tangle tests.d/03-Parser-Expanding/07-Completeness/01-parser-Dangling_Function.output
+Parse Error
+#+END_SRC
+*** 02 No Dangling Functions Part II
+#+BEGIN_SRC scheme :tangle tests.d/03-Parser-Expanding/07-Completeness/02-parser-Dangling_Function_Again.input
+\ln{3
+#+END_SRC
+#+BEGIN_SRC scheme :tangle tests.d/03-Parser-Expanding/07-Completeness/02-parser-Dangling_Function_Again.output
+Parse Error
+#+END_SRC
+*** 03 Brace Odering in Functions
+#+BEGIN_SRC scheme :tangle tests.d/03-Parser-Expanding/07-Completeness/03-parser-Brace_Ordering.input
+\sqrt[2{3}]
+#+END_SRC
+#+BEGIN_SRC scheme :tangle tests.d/03-Parser-Expanding/07-Completeness/03-parser-Brace_Ordering.output
+Parse Error
+#+END_SRC
+*** 04 No Unbraced Negitive Subscripts
+#+BEGIN_SRC scheme :tangle tests.d/03-Parser-Expanding/07-Completeness/04-README.md
+A negitive subscript needs braces, since the negation is a seperate token in LaTeX.
+#+END_SRC
+#+BEGIN_SRC scheme :tangle tests.d/03-Parser-Expanding/07-Completeness/04-parser-Subscripting_Negitives.input
+\log_-3{3}
+#+END_SRC
+#+BEGIN_SRC scheme :tangle tests.d/03-Parser-Expanding/07-Completeness/04-parser-Subscripting_Negitives.output
+Parse Error
+#+END_SRC
+*** 05 Yes Braced Negitive Subscripts
+#+BEGIN_SRC scheme :tangle tests.d/03-Parser-Expanding/07-Completeness/05-parser-Subscripting_Negitives.input
+\log_{-3}{3}
+#+END_SRC
+#+BEGIN_SRC scheme :tangle tests.d/03-Parser-Expanding/07-Completeness/05-parser-Subscripting_Negitives.output
+\log_{-3}{3}
+#+END_SRC
+*** 06 Power Termination
+#+BEGIN_SRC scheme :tangle tests.d/03-Parser-Expanding/07-Completeness/06-parser-Terminated_Power.input
+3^4^
+#+END_SRC
+#+BEGIN_SRC scheme :tangle tests.d/03-Parser-Expanding/07-Completeness/06-parser-Terminated_Power.output
+Parse Error
+#+END_SRC
+*** 07 Powers Aren't Uparrows
+#+BEGIN_SRC scheme :tangle tests.d/03-Parser-Expanding/07-Completeness/07-parser-Multi_Power.input
+2^^4
+#+END_SRC
+#+BEGIN_SRC scheme :tangle tests.d/03-Parser-Expanding/07-Completeness/07-parser-Multi_Power.output
+Parse Error
+#+END_SRC
+*** 08 Complex Function Example
+#+BEGIN_SRC scheme :tangle tests.d/03-Parser-Expanding/07-Completeness/08-parser-Complex_Parsing.input
+\sqrt[\log_\sqrt{2}\phi]{\ln{5}}
+#+END_SRC
+#+BEGIN_SRC scheme :tangle tests.d/03-Parser-Expanding/07-Completeness/08-parser-Complex_Parsing.output
+\sqrt[\log_\sqrt{2}{\phi}]{\ln{5}}
+#+END_SRC
+*** 09 Parentheses Aren't Bindings
+#+BEGIN_SRC scheme :tangle tests.d/03-Parser-Expanding/07-Completeness/09-parser-Parentheses_Arent_Bindings.input
+(x-3)^4_{x=1}
+#+END_SRC
+#+BEGIN_SRC scheme :tangle tests.d/03-Parser-Expanding/07-Completeness/09-parser-Parentheses_Arent_Bindings.output
+Parse Error
+#+END_SRC
+*** 10 No Binding Expressions
+#+BEGIN_SRC scheme :tangle tests.d/03-Parser-Expanding/07-Completeness/10-parser-Expresions_Arent_Bindable.input
+[x]_{x+2=5}
+#+END_SRC
+#+BEGIN_SRC scheme :tangle tests.d/03-Parser-Expanding/07-Completeness/10-parser-Expresions_Arent_Bindable.output
+Parse Error
+#+END_SRC
+*** 11 Unbound Vars are Fine in Bindings
+#+BEGIN_SRC scheme :tangle tests.d/03-Parser-Expanding/07-Completeness/11-parser-Extra_Vars_Are_Fine.input
+[x+y]^4_{x=2}
+#+END_SRC
+#+BEGIN_SRC scheme :tangle tests.d/03-Parser-Expanding/07-Completeness/11-parser-Extra_Vars_Are_Fine.output
+[x+y]^{x=4}_{x=2}
+#+END_SRC
+*** 12 Nested Sumation
+#+BEGIN_SRC scheme :tangle tests.d/03-Parser-Expanding/07-Completeness/12-parser-Nested_Sumation.input
+\sum_{x=1}^5 x+\sum_{y=1}^x y
+#+END_SRC
+#+BEGIN_SRC scheme :tangle tests.d/03-Parser-Expanding/07-Completeness/12-parser-Nested_Sumation.output
+\sum_{x=1}^5(x+\sum_{y=1}^x(y))
+#+END_SRC
+*** 13 Bindings Don't Override Parentheses
+#+BEGIN_SRC scheme :tangle tests.d/03-Parser-Expanding/07-Completeness/13-parser-Bind_With_Parens.input
+\sum_{x=1}^5 x+(x+3)
+#+END_SRC
+#+BEGIN_SRC scheme :tangle tests.d/03-Parser-Expanding/07-Completeness/13-parser-Bind_With_Parens.output
+\sum_{x=1}^5(x+x+3)
 #+END_SRC

@@ -219,12 +219,15 @@ std::ostream& operator<<(std::ostream& o,Equation const& rhs){
 					if(f.subscript.size()){
 						if(auto eqq=std::get_if<Equation::Op_node>(&f.subscript[0].value))
 							parens=true;
+						else if(auto eqn=std::get_if<double>(&f.subscript[0].value))
+							if(*eqn<0) // The minus sign needs {}s in LaTeX
+								parens=true;
 						o<<"_";
 						if(parens)
-							o<<"(";
-						o <<f.subscript[0];// TODO: maybe add {}s?
+							o<<"{";
+						o <<f.subscript[0];
 						if(parens)
-							o<<")";
+							o<<"}";
 					}
 					if(f.customizations.size())
 						o<<'['<<f.customizations[0]<<']';

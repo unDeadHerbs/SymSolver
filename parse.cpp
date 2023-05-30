@@ -168,25 +168,13 @@ Parser(variable){
 	}
 }
 
+Parser_Proto(single_or_brace);
 Parser_Proto(parenthetical);
 Parser_Proto(expression);
 Parser_Proto(bracketed);
 Parser_Proto(product);
 Parser_Proto(braces);
 Parser_Proto(term);
-
-Parser(brace_or_single){
-	ReturnP(parse_braces
-	       |parse_variable
-	       |parse_number);}
-
-Parser(space_term_or_brace){
-	if(head>=formula.size()) return;
-	bool has_space = formula[head]==' ';
-	consume_spaces(head);
-	ReturnP(parse_braces);
-	if(has_space)
-		ReturnP(parse_product);}
 
 vPS parser_sum_require_binding(Equation::Variable var,string const& formula,size_t head,bool allow_leading_unary){
 	// product+([+-]+product)*
@@ -225,33 +213,33 @@ Parser(named_operator){
 	// Basic Functions
 	for(auto h:parse_sym("\\sqrt",formula,head)){
 		for(auto tmplte:parse_bracketed(formula,h.head,true))
-			for(auto body:parse_space_term_or_brace(formula,tmplte.head,true))
+			for(auto body:parse_single_or_brace(formula,tmplte.head,true))
 				Return(Equation::F_node({"\\sqrt",{tmplte.eq},{body.eq}})+body);
-		for(auto body:parse_space_term_or_brace(formula,h.head,true))
+		for(auto body:parse_single_or_brace(formula,h.head,true))
 			Return(Equation::F_node({"\\sqrt",{body.eq}})+body);}
 	for(auto h:parse_sym("\\ln",formula,head))
-		for(auto body:parse_space_term_or_brace(formula,h.head,true))
+		for(auto body:parse_single_or_brace(formula,h.head,true))
 			Return(Equation::F_node({"\\ln",{body.eq}})+body);
 	for(auto h:parse_sym("\\log",formula,head)){
 		for(auto h2:parse_sym<'_'>(formula,h.head)){
-			for(auto base:parse_term(formula,h2.head,false))
-				for(auto body:parse_space_term_or_brace(formula,base.head,true))
+			for(auto base:parse_single_or_brace(formula,h2.head,false))
+				for(auto body:parse_single_or_brace(formula,base.head,false))
 					ReturnI(Equation::F_node({{{base.eq},{}},"\\log",{body.eq}}),body.head);}// TODO: Bidnings
-		for(auto body:parse_space_term_or_brace(formula,h.head,true))
+		for(auto body:parse_single_or_brace(formula,h.head,true))
 			Return(Equation::F_node({"\\log",{body.eq}})+body);}
 
 	// Trig Functions
 	for(auto h:parse_sym("\\exp",formula,head))
-		for(auto body:parse_space_term_or_brace(formula,h.head,true))
+		for(auto body:parse_single_or_brace(formula,h.head,true))
 			Return(Equation::F_node({"\\exp",{body.eq}})+body);
 	for(auto h:parse_sym("\\sin",formula,head))
-		for(auto body:parse_space_term_or_brace(formula,h.head,true))
+		for(auto body:parse_single_or_brace(formula,h.head,true))
 			Return(Equation::F_node({"\\sin",{body.eq}})+body);
 	for(auto h:parse_sym("\\cos",formula,head))
-		for(auto body:parse_space_term_or_brace(formula,h.head,true))
+		for(auto body:parse_single_or_brace(formula,h.head,true))
 			Return(Equation::F_node({"\\cos",{body.eq}})+body);
 	for(auto h:parse_sym("\\tan",formula,head))
-		for(auto body:parse_space_term_or_brace(formula,h.head,true))
+		for(auto body:parse_single_or_brace(formula,h.head,true))
 			Return(Equation::F_node({"\\tan",{body.eq}})+body);
 
 	// Binding Operators
@@ -261,7 +249,7 @@ Parser(named_operator){
 			for(auto e:parse_sym<'='>(formula,v.head))
 				for(auto lower:parse_expression(formula,e.head,true))
 					for(auto p:parse_sym("}^",formula,lower.head))
-						for(auto up:parse_brace_or_single(formula,p.head,true))
+						for(auto up:parse_single_or_brace(formula,p.head,true))
 							for(auto body:parser_sum_require_binding(var,formula,up.head,true))
 								ReturnI(Equation::F_node({"\\sum",var,
 																					{{lower.eq},{up.eq}},{body.eq}}),body.head);}
@@ -271,7 +259,7 @@ Parser(named_operator){
 			for(auto e:parse_sym<'='>(formula,v.head))
 				for(auto lower:parse_expression(formula,e.head,true))
 					for(auto p:parse_sym("}^",formula,lower.head))
-						for(auto up:parse_brace_or_single(formula,p.head,true))
+						for(auto up:parse_single_or_brace(formula,p.head,true))
 							for(auto body:parser_sum_require_binding(var,formula,up.head,true))
 								ReturnI(Equation::F_node({"\\prod",var,
 																					{{lower.eq},{up.eq}},{body.eq}}),body.head);}
@@ -292,7 +280,7 @@ Parser(Bracket_Substitution){
 	// [expr]_{var=exp}
 	for(auto body:parse_bracketed(formula,head,allow_leading_unary)){
 		for(auto u:parse_sym<'^'>(formula,body.head))
-			for(auto up:parse_brace_or_single(formula,u.head,true))
+			for(auto up:parse_single_or_brace(formula,u.head,true))
 				for(auto b:parse_sym("_{",formula,up.head))
 					for(auto v:parse_variable(formula,b.head,true))
 						for(auto e:parse_sym<'='>(formula,v.head))
@@ -308,6 +296,14 @@ Parser(Bracket_Substitution){
 							ReturnI(Equation::F_node({"binding",std::get<Equation::Variable>(v.eq.value),
 							                         {{lower.eq},{}},{body.eq}}),c.head);
 	}}
+
+Parser_Impl(single_or_brace){
+	allow_leading_unary=false;
+	ReturnP(parse_braces
+	       |parse_constant
+	       |parse_number
+	       |parse_variable
+	       |parse_named_operator);}
 
 Parser_Impl(term){
 	ReturnP(parse_parenthetical
