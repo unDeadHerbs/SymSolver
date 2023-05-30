@@ -171,8 +171,14 @@ Parser(variable){
 Parser_Proto(parenthetical);
 Parser_Proto(expression);
 Parser_Proto(bracketed);
+Parser_Proto(product);
 Parser_Proto(braces);
 Parser_Proto(term);
+
+Parser(brace_or_single){
+	ReturnP(parse_braces
+	       |parse_variable
+	       |parse_number);}
 
 Parser(space_term_or_brace){
 	if(head>=formula.size()) return;
@@ -180,7 +186,38 @@ Parser(space_term_or_brace){
 	consume_spaces(head);
 	ReturnP(parse_braces);
 	if(has_space)
-		ReturnP(parse_term);}
+		ReturnP(parse_product);}
+
+vPS parser_sum_require_binding(Equation::Variable var,string const& formula,size_t head,bool allow_leading_unary){
+	// product+([+-]+product)*
+	DB("Entering sum_require_binding: " <<formula.substr(0,head)<<" || "<<formula.substr(head));
+	vPS _ret;
+	auto in = [](auto e,auto v){return std::find(v.begin(),v.end(),e)!=v.end();};
+	std::function<vPS(ParserState,bool)> helper=[&](ParserState ps,bool insert)->vPS{
+		// ([+-]+product)*
+
+		// Builds tree from left so that division doesn't invert everything.
+		vPS ret;
+		if(insert)
+			ret.push_back(ps);
+		for(auto op:parse_sym<'+'>(formula,ps.head) + parse_sym<'-'>(formula,ps.head)){
+			for(auto product:parse_product(formula,ps.head+1,true)){
+				auto insert_next = in(var,std::get<0>(bindings(product.eq)));
+				Equation t={Equation::Op_node({op.token[0],{ps.eq},{product.eq}})};
+				for(auto r:helper(t+product,insert_next))
+					ret.push_back(r);
+			}}
+		return ret;
+	};
+
+	for(auto product:parse_product(formula,head,allow_leading_unary))
+		ReturnV(helper(product,true));
+	// TODO: ReturnP(parse_product+helper);
+
+	DB(" Leaving sum_require_binding: "<<_ret.size());
+	DBv(_ret);
+	return _ret;
+}
 
 Parser(named_operator){
 	consume_spaces(head);
@@ -216,6 +253,18 @@ Parser(named_operator){
 	for(auto h:parse_sym("\\tan",formula,head))
 		for(auto body:parse_space_term_or_brace(formula,h.head,true))
 			Return(Equation::F_node({"\\tan",{body.eq}})+body);
+
+	// Binding Operators
+	for(auto h:parse_sym("\\sum_{",formula,head))
+		for(auto v:parse_variable(formula,h.head,true)){
+			auto var=std::get<Equation::Variable>(v.eq.value);
+			for(auto e:parse_sym<'='>(formula,v.head))
+				for(auto lower:parse_expression(formula,e.head,true))
+					for(auto p:parse_sym("}^",formula,lower.head))
+						for(auto up:parse_brace_or_single(formula,p.head,true))
+							for(auto body:parser_sum_require_binding(var,formula,up.head,true))
+								ReturnI(Equation::F_node({"\\sum",var,
+																					{{lower.eq},{up.eq}},{body.eq}}),body.head);}
 }
 
 Parser(constant){
@@ -229,11 +278,12 @@ Parser(constant){
 }
 
 Parser(Bracket_Substitution){
+	// TODO: This will be much better once Parsers are chain-able.
 	// [expr]_{var=exp}
 	for(auto body:parse_bracketed(formula,head,allow_leading_unary)){
-		for(auto u:parse_sym("^{",formula,body.head))
-			for(auto up:parse_expression(formula,u.head,true))
-				for(auto b:parse_sym("}_{",formula,up.head))
+		for(auto u:parse_sym<'^'>(formula,body.head))
+			for(auto up:parse_brace_or_single(formula,u.head,true))
+				for(auto b:parse_sym("_{",formula,up.head))
 					for(auto v:parse_variable(formula,b.head,true))
 						for(auto e:parse_sym<'='>(formula,v.head))
 							for(auto lower:parse_expression(formula,e.head,true))
@@ -268,7 +318,7 @@ Parser(power){
 	}
 }
 
-Parser(product){
+Parser_Impl(product){
 	std::function<vPS(ParserState)> helper=[&](ParserState ps)->vPS{
 		// (('*'?|'/')+power)*
 
@@ -283,7 +333,7 @@ Parser(product){
 					// TODO: make =t= a transform function and then use + to chain these.
 					// TODO: ret+=(parse_power + t + helper)(formula,ps.head+1,true);
 			}}
-		for(auto power:parse_power(formula,ps.head,true)){
+		for(auto power:parse_power(formula,ps.head,false)){
 			Equation t={Equation::Op_node({'*',{ps.eq},{power.eq}})};
 			for(auto r:helper(t+power))
 				ret.push_back(r);}
@@ -297,6 +347,7 @@ Parser(product){
 }
 
 Parser(sum){
+	// product+([+-]+product)*
 	std::function<vPS(ParserState)> helper=[&](ParserState ps)->vPS{
 		// ([+-]+product)*
 
@@ -311,7 +362,7 @@ Parser(sum){
 			}}
 		return ret;
 	};
-	// product+([+-]+product)*
+
 	for(auto product:parse_product(formula,head,allow_leading_unary))
 		ReturnV(helper(product));
 	// TODO: ReturnP(parse_product+helper);
@@ -338,7 +389,6 @@ Parser_Impl(bracketed){
 			for(auto h2:parse_sym<']'>(formula,eq.head))
 				ReturnI(eq.eq,h2.head);}
 
-
 Parser_Impl(parenthetical){
 	// '('+expression+')'
 	unused(allow_leading_unary);
@@ -348,9 +398,35 @@ Parser_Impl(parenthetical){
 				ReturnI(eq.eq,h2.head);}
 
 Equation parse_formula(string const& formula) {
+	int valid=0;
 	for(auto eq: parse_expression(formula,0,true))
 		if(eq.head == formula.size())
-			return eq.eq;
-	// TODO: If there are multiple, parse ambiguous.
+			if(std::get<2>(bindings(eq.eq)).size()==0)
+				valid++;
+
+	if(valid>1)
+		throw "Ambiguous Parsing";
+	else if(valid==1)
+		for(auto eq: parse_expression(formula,0,true))
+			if(eq.head == formula.size())
+				if(std::get<2>(bindings(eq.eq)).size()==0)
+					return eq.eq;
+
+	// If no valid, allow mixed for debugging.
+	for(auto eq: parse_expression(formula,0,true))
+		if(eq.head == formula.size())
+			valid++;
+
+	if(valid)
+		std::cerr<<"[Warning] Bad Variable Bindings Detected"<<std::endl;
+	if(valid>1)
+		throw "Ambiguous Parsing";
+	else if(valid==1)
+		for(auto eq: parse_expression(formula,0,true))
+			if(eq.head == formula.size())
+				return eq.eq;
+
+	//else
 	throw "Unable to Parse";
+	//std::unreachable();
 }

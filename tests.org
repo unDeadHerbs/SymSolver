@@ -923,3 +923,50 @@ Unbound: y
 Bound: x
 Mixed Use:
 #+END_SRC
+** 06 Multi Part Operators
+#+BEGIN_SRC scheme :tangle tests.d/03-Parser-Expanding/04-Ignore-Spaces/README.md
+This is perhaps the single largest step so far.  It's time to parse
+variable scope.
+#+END_SRC
+*** 01 Sum Basic
+#+BEGIN_SRC scheme :tangle tests.d/03-Parser-Expanding/06-Binding-Operators/01-parser-sum_basic.input
+\sum_{x=1}^5 x
+#+END_SRC
+#+BEGIN_SRC scheme :tangle tests.d/03-Parser-Expanding/06-Binding-Operators/01-parser-sum_basic.output
+\sum_{x=1}^5(x)
+#+END_SRC
+*** 02 Sum Term
+#+BEGIN_SRC scheme :tangle tests.d/03-Parser-Expanding/06-Binding-Operators/02-parser-sum_term.input
+\sum_{x=1}^5 3x
+#+END_SRC
+#+BEGIN_SRC scheme :tangle tests.d/03-Parser-Expanding/06-Binding-Operators/02-parser-sum_term.output
+\sum_{x=1}^5(3*x)
+#+END_SRC
+*** 03 Sum Binding
+#+BEGIN_SRC scheme :tangle tests.d/03-Parser-Expanding/06-Binding-Operators/03-parser-sum_binding.input
+\sum_{x=1}^5 3+x
+#+END_SRC
+#+BEGIN_SRC scheme :tangle tests.d/03-Parser-Expanding/06-Binding-Operators/03-parser-sum_binding.output
+\sum_{x=1}^5(3+x)
+#+END_SRC
+*** 04 Sum Non-Binding
+#+BEGIN_SRC scheme :tangle tests.d/03-Parser-Expanding/06-Binding-Operators/04-parser-sum_non_binding.input
+\sum_{x=1}^5 x+3
+#+END_SRC
+#+BEGIN_SRC scheme :tangle tests.d/03-Parser-Expanding/06-Binding-Operators/04-parser-sum_non_binding.output
+\sum_{x=1}^5(x)+3
+#+END_SRC
+*** 05 Sum Double
+#+BEGIN_SRC scheme :tangle tests.d/03-Parser-Expanding/06-Binding-Operators/05-parser-sum_double.input
+\sum_{x=1}^5 x+\sum_{y=1}^5 y
+#+END_SRC
+#+BEGIN_SRC scheme :tangle tests.d/03-Parser-Expanding/06-Binding-Operators/05-parser-sum_double.output
+\sum_{x=1}^5(x)+\sum_{y=1}^5(y)
+#+END_SRC
+*** 06 Sum Double Same
+#+BEGIN_SRC scheme :tangle tests.d/03-Parser-Expanding/06-Binding-Operators/06-parser-sum_double_same.input
+\sum_{x=1}^5 x+\sum_{x=1}^5 x
+#+END_SRC
+#+BEGIN_SRC scheme :tangle tests.d/03-Parser-Expanding/06-Binding-Operators/06-parser-sum_double_same.output
+\sum_{x=1}^5(x)+\sum_{x=1}^5(x)
+#+END_SRC

@@ -196,28 +196,42 @@ std::ostream& operator<<(std::ostream& o,Equation const& rhs){
 					o<<"[New Constant, Fix Printer]";
 			},
 			[&](Equation::F_node const& f){
+				auto parens=false;
 				if(f.function=="binding"){
 					o<<'['<<f.arguments[0]<<']';
 					if(f.superscript.size())
 						o<<"^{"<<*f.bound<<"="<<f.superscript[0]<<"}";
 					o<<"_{"<<*f.bound<<"="<<f.subscript[0]<<"}";
 				}else{
-				o << f.function;
-				if(f.subscript.size()){
-					auto parens=false;
-					if(auto eqq=std::get_if<Equation::Op_node>(&f.subscript[0].value))
-						parens=true;
-					o<<"_";
-					if(parens)
-						o<<"(";
-					o <<f.subscript[0];// TODO: maybe add {}s?
-					if(parens)
-						o<<")";
+					o << f.function;
+					if(f.bound){
+						o<<"_{"<<*f.bound<<"="<<f.subscript[0]<<"}";
+						if(f.superscript.size()){
+							if(auto eqq=std::get_if<Equation::Op_node>(&f.superscript[0].value))
+								parens=true;
+							o<<"^";
+							if(parens)o<<"{";
+							o<<f.superscript[0];
+							if(parens)o<<"}";
+						}
+						o<<"("<<f.arguments[0]<<")";
+					}else{
+					if(f.subscript.size()){
+						if(auto eqq=std::get_if<Equation::Op_node>(&f.subscript[0].value))
+							parens=true;
+						o<<"_";
+						if(parens)
+							o<<"(";
+						o <<f.subscript[0];// TODO: maybe add {}s?
+						if(parens)
+							o<<")";
+					}
+					if(f.customizations.size())
+						o<<'['<<f.customizations[0]<<']';
+					if(f.arguments.size())
+						o<<'{'<<f.arguments[0]<<'}';
 				}
-				if(f.customizations.size())
-					o<<'['<<f.customizations[0]<<']';
-				if(f.arguments.size())
-					o<<'{'<<f.arguments[0]<<'}';}
+				}
 			},
 			[&](Equation::Op_node const& eq){
 				auto prec = precedent(eq.op);
