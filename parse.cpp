@@ -262,8 +262,7 @@ Parser(named_operator){
 						for(auto up:parse_single_or_brace(formula,p.head,true))
 							for(auto body:parser_sum_require_binding(var,formula,up.head,true))
 								ReturnI(Equation::F_node({"\\prod",var,
-																					{{lower.eq},{up.eq}},{body.eq}}),body.head);}
-}
+								                        {{lower.eq},{up.eq}},{body.eq}}),body.head);}}
 
 Parser(constant){
 	unused(allow_leading_unary);
@@ -294,8 +293,7 @@ Parser(Bracket_Substitution){
 					for(auto lower:parse_expression(formula,e.head,true))
 						for(auto c:parse_sym<'}'>(formula,lower.head))
 							ReturnI(Equation::F_node({"binding",std::get<Equation::Variable>(v.eq.value),
-							                         {{lower.eq},{}},{body.eq}}),c.head);
-	}}
+							                         {{lower.eq},{}},{body.eq}}),c.head);}}
 
 Parser_Impl(single_or_brace){
 	allow_leading_unary=false;

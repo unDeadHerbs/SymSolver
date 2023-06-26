@@ -1005,6 +1005,13 @@ variable scope.
 #+BEGIN_SRC scheme :tangle tests.d/03-Parser-Expanding/06-Binding-Operators/11-parser-prod_double_same.output
 \prod_{x=1}^5(x)+\prod_{x=1}^5(x)
 #+END_SRC
+*** 12 Product Nested
+#+BEGIN_SRC scheme :tangle tests.d/03-Parser-Expanding/06-Binding-Operators/12-parser-prod_nested.input
+\prod_{x=1}^5 x+\prod_{y=1}^5 xy
+#+END_SRC
+#+BEGIN_SRC scheme :tangle tests.d/03-Parser-Expanding/06-Binding-Operators/12-parser-prod_nested.output
+\prod_{x=1}^5(x+\prod_{y=1}^5(x*y))
+#+END_SRC
 ** 07 Completeness Tests
 *** 01 No Dangling Functions
 #+BEGIN_SRC scheme :tangle tests.d/03-Parser-Expanding/07-Completeness/01-parser-Dangling_Function.input
