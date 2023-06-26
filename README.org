@@ -1,1 +1,53 @@
 An expert system for solving Maths problems.
+
+Currently the system:
+- [X] Parses simple expressions
+	- [X] The +Four+ /Six/ basic Functions
+	- [X] Parentheses
+	- [X] Common operators
+		- Logs, Trig, Exponents
+- [X] Outputs in LaTeX
+- [X] Performs Constant Reduction
+	- [X] Identity Elements
+	- [X] Zero Elements
+	- [X] Calculable Values
+- [X] Parses Complex Expressions (LaTeX Like Language)
+	- [X] Local Bindings
+	- [X] Substitutions
+	- [X] Ranged Operators (Summation)
+- [X] Parses implied binding scopes
+	- Parentage's are often implied in summation notation
+	- This is the first step in parsing Einstein Tensor Notation
+- [ ] Unnests Separable bindings
+- [ ] Performs Bounded Operations
+- [-] Handles all algebraic numbers
+	- [-] Special Constants
+		- [X] The Common Ones
+		- [ ] The Uncommon Ones
+	- [ ] Arbitrary precision numbers
+	- [ ] Rationals and Radicals
+	- [ ] Power Towers
+- [ ] Factor Polynomials
+	- Have a special function called =Roots= that takes a polynomial and returns the algebraic roots
+	- [ ] Have special cases for the Quadratic, Cubic, and Quartic formulæ
+	- [ ] Use the Rational Root Theorem to find simple cases
+	- [ ] Use Newton's method to guess values and then try local algebraic numbers
+		- This will look for symbolic roots near the point
+		- In the worst case, this can "factor" a polynomial with a number
+      that is only approximately known, which is good enough for some
+      later methods to check validity.
+			- The "number" can be compared with algebraic numbers as long as
+        the polynomial has finite roots within the neighborhood.
+- [ ] Rationalizes Denominators
+	- Only when it makes things look better?
+	- Will need a "score" for how pretty a result is to perform advanced simplification
+	- This same part will also be used moving complex numbers to the numerator
+- [-] Explores Integration Techniques
+	- [X] Dynamic Binding Scopes
+	- [ ] Symbolic Differentiation
+	- [ ] Tree search though substations with a simplicity metric
+		- [ ] U-Substitution
+		- [ ] By Parts
+		- [ ] Laplace
+		- [ ] Half Tangent
+		- [ ] Complexifying
